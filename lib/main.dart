@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:polyrythms/circle_metronome.dart';
 import 'package:polyrythms/poly_rythms.dart';
 import 'package:polyrythms/rainbow_pendulum.dart';
 // import 'package:just_audio/just_audio.dart';
@@ -22,6 +23,7 @@ class MyApp extends StatelessWidget {
         MyHomePage.destination: (context) => const MyHomePage(),
         RainbowPendulum.destination: (context) => const RainbowPendulum(),
         PolyRythms.destination: (context) => const PolyRythms(),
+        CircleMetronome.destination: (context) => const CircleMetronome(),
       },
       theme: ThemeData(
         useMaterial3: true,
@@ -37,7 +39,6 @@ class MyHomePage extends StatelessWidget {
 
   static const padding = 24.0;
   static const spacing = 16.0;
-
   static const nCols = 2;
 
   const MyHomePage({super.key});
@@ -76,6 +77,10 @@ class MyHomePage extends StatelessWidget {
           icon: PolygonIcon(width: iconSize),
           destination: PolyRythms.destination,
         ),
+        Page(
+          icon: MetronomeIcon(width: iconSize),
+          destination: CircleMetronome.destination,
+        ),
       ],
     )));
   }
@@ -110,14 +115,14 @@ class RainbowIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return CustomPaint(
-      painter: CirclePainter(width: width),
+      painter: RainbowPainter(width: width),
     );
   }
 }
 
-class CirclePainter extends CustomPainter {
+class RainbowPainter extends CustomPainter {
   final double width;
-  const CirclePainter({required this.width});
+  const RainbowPainter({required this.width});
 
   static const numItems = 4;
 
@@ -127,7 +132,7 @@ class CirclePainter extends CustomPainter {
     final paint = Paint()
       ..color = Colors.white
       ..style = PaintingStyle.stroke
-      ..strokeWidth = width / 20
+      ..strokeWidth = _iconStrokeWidth(width)
       ..strokeCap = StrokeCap.round;
 
     for (int i = 0; i < numItems; i++) {
@@ -152,6 +157,32 @@ class CirclePainter extends CustomPainter {
   }
 }
 
+class MetronomeIcon extends StatelessWidget {
+  final double width;
+  const MetronomeIcon({required this.width, super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        CustomPaint(
+          painter:
+              CirclePainter(width / 2, strokeWidth: _iconStrokeWidth(width)),
+        ),
+        CustomPaint(
+          painter: MetronomePointPainter(
+            radius: width / 2,
+            elapsedTimeInMs: 6000,
+            numItems: 666,
+            circleRadius: _iconStrokeWidth(width) / 2,
+            color: Colors.white,
+          ),
+        )
+      ],
+    );
+  }
+}
+
 class PolygonIcon extends StatelessWidget {
   final double width;
   const PolygonIcon({required this.width, super.key});
@@ -163,10 +194,14 @@ class PolygonIcon extends StatelessWidget {
         ...{2, 4, 6}.map(
           (rythm) => CustomPaint(
             painter: PolygonPainter(
-                rythm: rythm, radius: width / 2, strokeWidth: width / 20),
+                rythm: rythm,
+                radius: width / 2,
+                strokeWidth: _iconStrokeWidth(width)),
           ),
         ),
       ],
     );
   }
 }
+
+double _iconStrokeWidth(double width) => width / 20;
