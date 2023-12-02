@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:polyrythms/functions/calculate_radius.dart';
-import 'package:polyrythms/rainbow_pendulum.dart';
+import 'package:polyrythms/screens/rainbow_pendulum.dart';
 import 'package:rainbow_color/rainbow_color.dart';
 
 const _numItems = 250;

@@ -1,8 +1,8 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:polyrythms/circle_metronome.dart';
-import 'package:polyrythms/poly_rythms.dart';
-import 'package:polyrythms/rainbow_pendulum.dart';
+import 'package:polyrythms/screens/circle_metronome.dart';
+import 'package:polyrythms/screens/poly_rythms.dart';
+import 'package:polyrythms/screens/rainbow_pendulum.dart';
 // import 'package:just_audio/just_audio.dart';
 // import 'package:polyrythms/gen/assets.gen.dart';
 
@@ -20,7 +20,7 @@ class MyApp extends StatelessWidget {
       initialRoute: "/",
       title: 'Flutter Demo',
       routes: {
-        MyHomePage.destination: (context) => const MyHomePage(),
+        HomeScreen.destination: (context) => const HomeScreen(),
         RainbowPendulum.destination: (context) => const RainbowPendulum(),
         PolyRythms.destination: (context) => const PolyRythms(),
         CircleMetronome.destination: (context) => const CircleMetronome(),
@@ -34,14 +34,14 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class MyHomePage extends StatelessWidget {
+class HomeScreen extends StatelessWidget {
   static const destination = "/";
 
   static const padding = 24.0;
   static const spacing = 16.0;
   static const nCols = 2;
 
-  const MyHomePage({super.key});
+  const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
