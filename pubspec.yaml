@@ -21,7 +21,10 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-
+  fonts:
+    - family: RubikMonoOne
+      fonts:
+        - asset: assets/font/RubikMonoOne-Regular.ttf
   assets:
     - assets/sound/
 

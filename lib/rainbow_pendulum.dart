@@ -5,11 +5,6 @@ import 'package:flutter/material.dart';
 class RainbowPendulum extends StatelessWidget {
   static const destination = "rainbow-pendulum";
 
-  static Route route() => MaterialPageRoute(
-        builder: (context) => const RainbowPendulum(),
-        settings: const RouteSettings(name: destination),
-      );
-
   const RainbowPendulum({super.key});
 
   @override

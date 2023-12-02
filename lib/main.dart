@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:polyrythms/poly_rythms.dart';
 import 'package:polyrythms/rainbow_pendulum.dart';
 // import 'package:just_audio/just_audio.dart';
 // import 'package:polyrythms/gen/assets.gen.dart';
@@ -15,44 +16,65 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      initialRoute: "/",
       title: 'Flutter Demo',
+      routes: {
+        MyHomePage.destination: (context) => const MyHomePage(),
+        RainbowPendulum.destination: (context) => const RainbowPendulum(),
+        PolyRythms.destination: (context) => const PolyRythms(),
+      },
       theme: ThemeData(
         useMaterial3: true,
+        fontFamily: 'RubikMonoOne',
+        primaryColor: Colors.white,
       ),
-      home: const MyHomePage(),
     );
   }
 }
 
 class MyHomePage extends StatelessWidget {
+  static const destination = "/";
+
+  static const padding = 24.0;
+  static const spacing = 16.0;
+
+  static const nCols = 2;
+
   const MyHomePage({super.key});
+
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+    final width = size.width;
+    final height = size.height;
+    final paddingVertical =
+        height >= width ? (height - width) / 2 + padding : padding;
+    final paddingHorizontal =
+        width >= height ? (width - height) / 2 + padding : padding;
+
+    final iconSize =
+        (width - 2 * paddingHorizontal - (nCols - 1) * spacing) / 4;
+
     return Scaffold(
         body: Center(
             child: GridView(
-      padding: const EdgeInsets.all(24.0),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        mainAxisSpacing: 16,
-        crossAxisSpacing: 16.0,
+      padding: EdgeInsets.symmetric(
+        vertical: paddingVertical,
+        horizontal: paddingHorizontal,
       ),
-      children: const [
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: nCols,
+        mainAxisSpacing: spacing,
+        crossAxisSpacing: spacing,
+      ),
+      children: [
         Page(
-          icon: StaticWidget(),
-          route: RainbowPendulum.route,
+          icon: RainbowIcon(width: iconSize),
+          destination: RainbowPendulum.destination,
         ),
         Page(
-          icon: StaticWidget(),
-          route: RainbowPendulum.route,
-        ),
-        Page(
-          icon: StaticWidget(),
-          route: RainbowPendulum.route,
-        ),
-        Page(
-          icon: StaticWidget(),
-          route: RainbowPendulum.route,
+          icon: PolygonIcon(width: iconSize),
+          destination: PolyRythms.destination,
         ),
       ],
     )));
@@ -61,19 +83,17 @@ class MyHomePage extends StatelessWidget {
 
 class Page extends StatelessWidget {
   final Widget icon;
-  final Route Function() route;
+  final String destination;
 
-  const Page({super.key, required this.icon, required this.route});
+  const Page({super.key, required this.icon, required this.destination});
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        Navigator.of(context).push(route());
+        Navigator.of(context).pushNamed(destination);
       },
       child: Container(
-        width: 100,
-        height: 100,
         decoration: const BoxDecoration(
             borderRadius: BorderRadius.all(Radius.circular(24)),
             color: Colors.black),
@@ -83,13 +103,14 @@ class Page extends StatelessWidget {
   }
 }
 
-class StaticWidget extends StatelessWidget {
-  const StaticWidget({super.key});
+class RainbowIcon extends StatelessWidget {
+  final double width;
+  const RainbowIcon({required this.width, super.key});
 
   @override
   Widget build(BuildContext context) {
     return CustomPaint(
-      painter: CirclePainter(width: MediaQuery.sizeOf(context).width / 5),
+      painter: CirclePainter(width: width),
     );
   }
 }
@@ -114,7 +135,7 @@ class CirclePainter extends CustomPainter {
 
       canvas.drawArc(
         Rect.fromCenter(
-            center: Offset(0, width / 3),
+            center: Offset(0, width / 4),
             width: width - offset * i,
             height: width - offset * i),
         math.pi,
@@ -128,5 +149,24 @@ class CirclePainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) {
     return false;
+  }
+}
+
+class PolygonIcon extends StatelessWidget {
+  final double width;
+  const PolygonIcon({required this.width, super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        ...{2, 4, 6}.map(
+          (rythm) => CustomPaint(
+            painter: PolygonPainter(
+                rythm: rythm, radius: width / 2, strokeWidth: width / 20),
+          ),
+        ),
+      ],
+    );
   }
 }
