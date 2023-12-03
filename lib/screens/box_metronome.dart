@@ -2,8 +2,11 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:polyrythms/functions/calculate_radius.dart';
+import 'package:polyrythms/gen/assets.gen.dart';
 import 'package:polyrythms/widgets/selection_container.dart';
+import 'package:soundpool/soundpool.dart';
 
 class Info {
   final Color color;
@@ -18,14 +21,23 @@ class Info {
 class BoxMetronome extends StatefulWidget {
   static const destination = "box-metronome";
 
-  const BoxMetronome({super.key});
+  const BoxMetronome(this.pool, {super.key});
+
+  final Soundpool pool;
+
+  static Route route(Soundpool pool) {
+    return MaterialPageRoute(
+      settings: const RouteSettings(name: destination),
+      builder: (_) => BoxMetronome(pool),
+    );
+  }
 
   @override
   State<BoxMetronome> createState() => _BoxMetronomeState();
 }
 
 class _BoxMetronomeState extends State<BoxMetronome> {
-  double _velocity = 0.0001;
+  double _velocity = 0.00025;
   int _verticalRythm = 69;
   int _horizontalRythm = 420;
 
@@ -36,48 +48,69 @@ class _BoxMetronomeState extends State<BoxMetronome> {
     final height = radius * 2 * 9 / 16;
     return Scaffold(
         backgroundColor: Colors.black,
-        body: Column(
-          children: [
-            _RythmSelector(
-              active: true,
-              verticalRythm: _verticalRythm,
-              horizontalRythm: _horizontalRythm,
-              velocity: _velocity,
-              onConfirm: (verticalRythm, horizontalRythm, velocity) {
-                setState(() {
-                  _verticalRythm = verticalRythm;
-                  _horizontalRythm = horizontalRythm;
-                  _velocity = velocity;
-                });
-              },
-            ),
-            Expanded(
-              child: Center(
-                child: Stack(
-                  alignment: AlignmentDirectional.center,
-                  children: [
-                    _StaticWidget(width: width, height: height),
-                    _MovingWidget(
-                      startTime: DateTime.now(),
-                      width: width,
-                      height: height,
-                      velocity: _velocity,
-                      horizontalRythm: _horizontalRythm,
-                      verticalRythm: _verticalRythm,
+        body: FutureBuilder(
+            future: setAssets(),
+            builder: (context, snapshot) {
+              final data = snapshot.data;
+              if (snapshot.connectionState != ConnectionState.done || data == null) {
+                return const SizedBox.shrink();
+              }
+              return Column(
+                children: [
+                  _RythmSelector(
+                    active: true,
+                    verticalRythm: _verticalRythm,
+                    horizontalRythm: _horizontalRythm,
+                    velocity: _velocity,
+                    onConfirm: (verticalRythm, horizontalRythm, velocity) {
+                      setState(() {
+                        _verticalRythm = verticalRythm;
+                        _horizontalRythm = horizontalRythm;
+                        _velocity = velocity;
+                      });
+                    },
+                  ),
+                  Expanded(
+                    child: Center(
+                      child: Stack(
+                        alignment: AlignmentDirectional.center,
+                        children: [
+                          _StaticWidget(width: width, height: height),
+                          _MovingWidget(
+                            startTime: DateTime.now(),
+                            width: width,
+                            height: height,
+                            velocity: _velocity,
+                            horizontalRythm: _horizontalRythm,
+                            verticalRythm: _verticalRythm,
+                            soundpool: widget.pool,
+                            verticalSoundId: data[0],
+                            horizontalSoundId: data[1],
+                          ),
+                        ],
+                      ),
                     ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ));
+                  ),
+                ],
+              );
+            }));
+  }
+
+  Future<List<int>> setAssets() async {
+    final List<int> soundIds = [];
+    var hihat = await rootBundle.load(Assets.sound.hiHat);
+    var drumstick = await rootBundle.load(Assets.sound.drumstick);
+    soundIds.addAll([
+      await widget.pool.load(hihat),
+      await widget.pool.load(drumstick),
+    ]);
+    return soundIds;
   }
 }
 
 class _RythmSelector extends StatefulWidget {
   final bool active;
-  final void Function(int verticalRythm, int horizontalRythm, double velocity)
-      onConfirm;
+  final void Function(int verticalRythm, int horizontalRythm, double velocity) onConfirm;
   final int verticalRythm;
   final int horizontalRythm;
   final double velocity;
@@ -163,11 +196,7 @@ class _RythmSelectorState extends State<_RythmSelector> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 32.0),
             child: GestureDetector(
-              onTap: () {
-                print(
-                    "velocity: $velocity, vertical: $verticalRythm, horizontal: $horizontalRythm");
-                widget.onConfirm(verticalRythm, horizontalRythm, velocity);
-              },
+              onTap: () => widget.onConfirm(verticalRythm, horizontalRythm, velocity),
               child: const SelectContainer(
                 child: Center(
                   child: Text(
@@ -201,8 +230,7 @@ class _RythmTextField extends StatelessWidget {
             focusColor: Colors.pinkAccent,
             labelText: "Rythm",
             hintText: "Rythm",
-            border: UnderlineInputBorder(
-                borderSide: BorderSide(color: Colors.white)),
+            border: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white)),
           ),
           initialValue: "$initialValue",
           keyboardType: TextInputType.number,
@@ -225,6 +253,10 @@ class _MovingWidget extends StatefulWidget {
   final DateTime startTime;
   final int verticalRythm;
   final int horizontalRythm;
+  final int verticalSoundId;
+  final int horizontalSoundId;
+
+  final Soundpool soundpool;
   const _MovingWidget({
     required this.height,
     required this.width,
@@ -232,6 +264,9 @@ class _MovingWidget extends StatefulWidget {
     required this.startTime,
     required this.horizontalRythm,
     required this.verticalRythm,
+    required this.soundpool,
+    required this.verticalSoundId,
+    required this.horizontalSoundId,
   });
 
   @override
@@ -263,22 +298,19 @@ class _MovingWidgetState extends State<_MovingWidget> {
     height = widget.height;
     horizontalRythm = widget.horizontalRythm;
     verticalRythm = widget.verticalRythm;
-    final xFraction = horizontalRythm > verticalRythm
-        ? width
-        : width * verticalRythm / horizontalRythm;
-    final yFraction = verticalRythm > horizontalRythm
-        ? height
-        : height * horizontalRythm / verticalRythm;
+    final xFraction = horizontalRythm > verticalRythm ? width : width * verticalRythm / horizontalRythm;
+    final yFraction = verticalRythm > horizontalRythm ? height : height * horizontalRythm / verticalRythm;
     velocityY = widget.velocity * yFraction;
     velocityX = widget.velocity * xFraction;
     startTime = widget.startTime;
-    verticalSoundTimer = Timer.periodic(
-        Duration(milliseconds: widget.height ~/ velocityY), (timer) {});
-    horizontalSoundTimer = Timer.periodic(
-        Duration(milliseconds: widget.height ~/ velocityY), (timer) {});
+    verticalSoundTimer = Timer.periodic(Duration(milliseconds: widget.height ~/ velocityY), (timer) {
+      widget.soundpool.play(widget.verticalSoundId);
+    });
+    horizontalSoundTimer = Timer.periodic(Duration(milliseconds: widget.width ~/ velocityX), (timer) {
+      widget.soundpool.play(widget.horizontalSoundId);
+    });
     // 60 fps
-    renderTimer =
-        Timer.periodic(const Duration(milliseconds: 1000 ~/ 60), (timer) {
+    renderTimer = Timer.periodic(const Duration(milliseconds: 1000 ~/ 60), (timer) {
       if (!mounted) return;
       setState(() {
         timePassedInMs = DateTime.now().difference(startTime).inMilliseconds;
@@ -289,6 +321,7 @@ class _MovingWidgetState extends State<_MovingWidget> {
   @override
   void didUpdateWidget(_MovingWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
+    cancelTimers();
     init();
   }
 
@@ -301,9 +334,13 @@ class _MovingWidgetState extends State<_MovingWidget> {
   @override
   void dispose() {
     super.dispose();
-    renderTimer.cancel();
+    cancelTimers();
+  }
+
+  void cancelTimers() {
     verticalSoundTimer.cancel();
     horizontalSoundTimer.cancel();
+    renderTimer.cancel();
   }
 
   @override
@@ -349,11 +386,8 @@ class DVDLogoPainter extends CustomPainter {
 
     final timeTerminationCondiiton = timeRemaining < 0;
     final bounceTerminationCondition = xBounces == 0 && yBounces == 0;
-    final velocityTerminationCondition = velocityX * timeRemaining <= width &&
-        velocityY * timeRemaining <= height;
-    if (timeTerminationCondiiton ||
-        bounceTerminationCondition ||
-        velocityTerminationCondition) {
+    final velocityTerminationCondition = velocityX * timeRemaining <= width && velocityY * timeRemaining <= height;
+    if (timeTerminationCondiiton || bounceTerminationCondition || velocityTerminationCondition) {
       return;
     }
 
@@ -366,15 +400,13 @@ class DVDLogoPainter extends CustomPainter {
 
     if (timeSinceLastXCollision < timeSinceLastYCollision) {
       lastCollisionX = xBounces.isEven ? 0 : width;
-      lastCollisionY = yBounces.isEven
-          ? y - timeSinceLastXCollision * velocityY
-          : y + timeSinceLastXCollision * velocityY;
+      lastCollisionY =
+          yBounces.isEven ? y - timeSinceLastXCollision * velocityY : y + timeSinceLastXCollision * velocityY;
       timeRemaining -= math.max(1, timeSinceLastXCollision.toInt());
     } else {
       lastCollisionY = yBounces.isEven ? 0 : height;
-      lastCollisionX = xBounces.isEven
-          ? x - timeSinceLastYCollision * velocityX
-          : x + timeSinceLastYCollision * velocityX;
+      lastCollisionX =
+          xBounces.isEven ? x - timeSinceLastYCollision * velocityX : x + timeSinceLastYCollision * velocityX;
       timeRemaining -= math.max(1, timeSinceLastYCollision.toInt());
     }
 
@@ -402,8 +434,9 @@ class DVDLogoPainter extends CustomPainter {
     path.lineTo(-width / 2, -height / 2);
     canvas.drawPath(path, trailPaint);
 
-    if (showDot)
+    if (showDot) {
       canvas.drawCircle(Offset(x - width / 2, y - height / 2), 20, paint);
+    }
   }
 
   @override
@@ -412,8 +445,7 @@ class DVDLogoPainter extends CustomPainter {
   }
 }
 
-double calculateCurrentPosition(
-    double velocity, int timePassedInMs, double size) {
+double calculateCurrentPosition(double velocity, int timePassedInMs, double size) {
   final dist = velocity * timePassedInMs % size;
 
   final bounces = calculateBounces(velocity, timePassedInMs, size);
@@ -423,8 +455,7 @@ double calculateCurrentPosition(
   return dist;
 }
 
-int calculateBounces(double velocity, int timePassedInMs, double size,
-    [double startOffset = 0]) {
+int calculateBounces(double velocity, int timePassedInMs, double size, [double startOffset = 0]) {
   return (velocity * timePassedInMs ~/ size);
 }
 

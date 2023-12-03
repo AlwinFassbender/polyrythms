@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:polyrythms/widgets/selection_container.dart';
+import 'package:soundpool/soundpool.dart';
 
 const _period = 8000;
 const _polygonRadius = 200.0;
@@ -28,7 +29,16 @@ class Info {
 class PolyRythms extends StatefulWidget {
   static const destination = "poly-rythms";
 
-  const PolyRythms({super.key});
+  const PolyRythms(this.pool, {super.key});
+
+  final Soundpool pool;
+
+  static Route route(Soundpool pool) {
+    return MaterialPageRoute(
+      settings: const RouteSettings(name: destination),
+      builder: (_) => PolyRythms(pool),
+    );
+  }
 
   @override
   State<PolyRythms> createState() => _PolyRythmsState();
@@ -52,8 +62,7 @@ class _PolyRythmsState extends State<PolyRythms> {
     super.initState();
     for (final i in rythms.keys) {
       final durationInMs = _period ~/ i;
-      soundTimers
-          .add(Timer.periodic(Duration(milliseconds: durationInMs), (timer) {
+      soundTimers.add(Timer.periodic(Duration(milliseconds: durationInMs), (timer) {
         if (activeRythms.contains(i)) {
           print("playing key $i");
         }
@@ -72,10 +81,8 @@ class _PolyRythmsState extends State<PolyRythms> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  ...rythms.keys.map((key) => _RythmSelector(
-                      rythm: key,
-                      active: activeRythms.contains(key),
-                      onTap: _selectRythm))
+                  ...rythms.keys
+                      .map((key) => _RythmSelector(rythm: key, active: activeRythms.contains(key), onTap: _selectRythm))
                 ],
               ),
             ),
@@ -116,8 +123,7 @@ class _RythmSelector extends StatelessWidget {
   final bool active;
   final void Function(int) onTap;
 
-  const _RythmSelector(
-      {required this.rythm, required this.active, required this.onTap});
+  const _RythmSelector({required this.rythm, required this.active, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -168,12 +174,9 @@ class _MovingWidgetState extends State<_MovingWidget> {
     super.initState();
 
     // 60 fps
-    renderTimer =
-        Timer.periodic(const Duration(milliseconds: 1000 ~/ 60), (timer) {
+    renderTimer = Timer.periodic(const Duration(milliseconds: 1000 ~/ 60), (timer) {
       setState(() {
-        state = (DateTime.now().difference(widget.startTime).inMilliseconds %
-            _period /
-            _period);
+        state = (DateTime.now().difference(widget.startTime).inMilliseconds % _period / _period);
       });
     });
   }
@@ -233,10 +236,8 @@ Offset positionFromDistance(double distance, int rythm) {
   final offset = getOffset(rythm, sideIndex, _polygonRadius);
   final previousOffset = getOffset(rythm, previousIndex, _polygonRadius);
 
-  final x = previousOffset.dx +
-      (offset.dx - previousOffset.dx) * positionOnSide / sideLength;
-  final y = previousOffset.dy +
-      (offset.dy - previousOffset.dy) * positionOnSide / sideLength;
+  final x = previousOffset.dx + (offset.dx - previousOffset.dx) * positionOnSide / sideLength;
+  final y = previousOffset.dy + (offset.dy - previousOffset.dy) * positionOnSide / sideLength;
   return Offset(x, y);
 }
 

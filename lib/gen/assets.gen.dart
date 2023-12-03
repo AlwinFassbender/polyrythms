@@ -12,68 +12,76 @@ import 'package:flutter/widgets.dart';
 class $AssetsSoundGen {
   const $AssetsSoundGen();
 
-  /// File path: assets/sound/key-1.wav
-  String get key1 => 'assets/sound/key-1.wav';
+  /// File path: assets/sound/drumstick.mp3
+  String get drumstick => 'assets/sound/drumstick.mp3';
 
-  /// File path: assets/sound/key-10.wav
-  String get key10 => 'assets/sound/key-10.wav';
+  /// File path: assets/sound/hi-hat.mp3
+  String get hiHat => 'assets/sound/hi-hat.mp3';
 
-  /// File path: assets/sound/key-11.wav
-  String get key11 => 'assets/sound/key-11.wav';
+  /// File path: assets/sound/key-1.mp3
+  String get key1 => 'assets/sound/key-1.mp3';
 
-  /// File path: assets/sound/key-12.wav
-  String get key12 => 'assets/sound/key-12.wav';
+  /// File path: assets/sound/key-10.mp3
+  String get key10 => 'assets/sound/key-10.mp3';
 
-  /// File path: assets/sound/key-13.wav
-  String get key13 => 'assets/sound/key-13.wav';
+  /// File path: assets/sound/key-11.mp3
+  String get key11 => 'assets/sound/key-11.mp3';
 
-  /// File path: assets/sound/key-14.wav
-  String get key14 => 'assets/sound/key-14.wav';
+  /// File path: assets/sound/key-12.mp3
+  String get key12 => 'assets/sound/key-12.mp3';
 
-  /// File path: assets/sound/key-15.wav
-  String get key15 => 'assets/sound/key-15.wav';
+  /// File path: assets/sound/key-13.mp3
+  String get key13 => 'assets/sound/key-13.mp3';
 
-  /// File path: assets/sound/key-16.wav
-  String get key16 => 'assets/sound/key-16.wav';
+  /// File path: assets/sound/key-14.mp3
+  String get key14 => 'assets/sound/key-14.mp3';
 
-  /// File path: assets/sound/key-17.wav
-  String get key17 => 'assets/sound/key-17.wav';
+  /// File path: assets/sound/key-15.mp3
+  String get key15 => 'assets/sound/key-15.mp3';
 
-  /// File path: assets/sound/key-18.wav
-  String get key18 => 'assets/sound/key-18.wav';
+  /// File path: assets/sound/key-16.mp3
+  String get key16 => 'assets/sound/key-16.mp3';
 
-  /// File path: assets/sound/key-19.wav
-  String get key19 => 'assets/sound/key-19.wav';
+  /// File path: assets/sound/key-17.mp3
+  String get key17 => 'assets/sound/key-17.mp3';
 
-  /// File path: assets/sound/key-2.wav
-  String get key2 => 'assets/sound/key-2.wav';
+  /// File path: assets/sound/key-18.mp3
+  String get key18 => 'assets/sound/key-18.mp3';
 
-  /// File path: assets/sound/key-20.wav
-  String get key20 => 'assets/sound/key-20.wav';
+  /// File path: assets/sound/key-19.mp3
+  String get key19 => 'assets/sound/key-19.mp3';
 
-  /// File path: assets/sound/key-3.wav
-  String get key3 => 'assets/sound/key-3.wav';
+  /// File path: assets/sound/key-2.mp3
+  String get key2 => 'assets/sound/key-2.mp3';
 
-  /// File path: assets/sound/key-4.wav
-  String get key4 => 'assets/sound/key-4.wav';
+  /// File path: assets/sound/key-20.mp3
+  String get key20 => 'assets/sound/key-20.mp3';
 
-  /// File path: assets/sound/key-5.wav
-  String get key5 => 'assets/sound/key-5.wav';
+  /// File path: assets/sound/key-3.mp3
+  String get key3 => 'assets/sound/key-3.mp3';
 
-  /// File path: assets/sound/key-6.wav
-  String get key6 => 'assets/sound/key-6.wav';
+  /// File path: assets/sound/key-4.mp3
+  String get key4 => 'assets/sound/key-4.mp3';
 
-  /// File path: assets/sound/key-7.wav
-  String get key7 => 'assets/sound/key-7.wav';
+  /// File path: assets/sound/key-5.mp3
+  String get key5 => 'assets/sound/key-5.mp3';
 
-  /// File path: assets/sound/key-8.wav
-  String get key8 => 'assets/sound/key-8.wav';
+  /// File path: assets/sound/key-6.mp3
+  String get key6 => 'assets/sound/key-6.mp3';
 
-  /// File path: assets/sound/key-9.wav
-  String get key9 => 'assets/sound/key-9.wav';
+  /// File path: assets/sound/key-7.mp3
+  String get key7 => 'assets/sound/key-7.mp3';
+
+  /// File path: assets/sound/key-8.mp3
+  String get key8 => 'assets/sound/key-8.mp3';
+
+  /// File path: assets/sound/key-9.mp3
+  String get key9 => 'assets/sound/key-9.mp3';
 
   /// List of all assets
   List<String> get values => [
+        drumstick,
+        hiHat,
         key1,
         key10,
         key11,

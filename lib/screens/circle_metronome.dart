@@ -4,13 +4,23 @@ import 'package:flutter/material.dart';
 import 'package:polyrythms/functions/calculate_radius.dart';
 import 'package:polyrythms/screens/rainbow_pendulum.dart';
 import 'package:rainbow_color/rainbow_color.dart';
+import 'package:soundpool/soundpool.dart';
 
 const _numItems = 250;
 
 class CircleMetronome extends StatelessWidget {
   static const destination = "circle-metronome";
 
-  const CircleMetronome({super.key});
+  const CircleMetronome(this.pool, {super.key});
+
+  final Soundpool pool;
+
+  static Route route(Soundpool pool) {
+    return MaterialPageRoute(
+      settings: const RouteSettings(name: destination),
+      builder: (_) => CircleMetronome(pool),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -58,19 +68,16 @@ class _MovingWidgetState extends State<_MovingWidget> {
     super.initState();
 
     // 60 fps
-    renderTimer =
-        Timer.periodic(const Duration(milliseconds: 1000 ~/ 60), (timer) {
+    renderTimer = Timer.periodic(const Duration(milliseconds: 1000 ~/ 60), (timer) {
       setState(() {
         elapsedTimeInMs = DateTime.now().difference(startTime).inMilliseconds;
       });
     });
 
     for (int i = 0; i < _numItems; i++) {
-      final durationInMs =
-          (widget.radius * 2) ~/ _calculateVelocity(i, widget.radius);
+      final durationInMs = (widget.radius * 2) ~/ _calculateVelocity(i, widget.radius);
       Future.delayed(Duration(milliseconds: durationInMs), () {
-        soundTimers
-            .add(Timer.periodic(Duration(milliseconds: durationInMs), (timer) {
+        soundTimers.add(Timer.periodic(Duration(milliseconds: durationInMs), (timer) {
           print("playing key $i");
         }));
       });
@@ -80,8 +87,7 @@ class _MovingWidgetState extends State<_MovingWidget> {
   @override
   Widget build(BuildContext context) {
     return CustomPaint(
-      painter: MetronomePointPainter(
-          radius: widget.radius, elapsedTimeInMs: elapsedTimeInMs),
+      painter: MetronomePointPainter(radius: widget.radius, elapsedTimeInMs: elapsedTimeInMs),
     );
   }
 }
@@ -109,8 +115,7 @@ class MetronomePointPainter extends CustomPainter {
       final velocity = _calculateVelocity(i, radius);
       final angle = (2 * math.pi) / numItems * i;
       final distance = velocity * elapsedTimeInMs;
-      final distanceInsideCircle =
-          calculateDistanceInsideCircle(distance, radius);
+      final distanceInsideCircle = calculateDistanceInsideCircle(distance, radius);
 
       final x = distanceInsideCircle * math.cos(angle);
       final y = distanceInsideCircle * math.sin(angle);
