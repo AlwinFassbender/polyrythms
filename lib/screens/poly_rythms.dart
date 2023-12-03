@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:polyrythms/widgets/selection_container.dart';
 
 const _period = 8000;
 const _polygonRadius = 200.0;
@@ -71,10 +72,10 @@ class _PolyRythmsState extends State<PolyRythms> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  ...rythms.keys.map((key) => RythmSelector(
+                  ...rythms.keys.map((key) => _RythmSelector(
                       rythm: key,
                       active: activeRythms.contains(key),
-                      onTap: selectRythm))
+                      onTap: _selectRythm))
                 ],
               ),
             ),
@@ -83,10 +84,10 @@ class _PolyRythmsState extends State<PolyRythms> {
                 child: Stack(
                   alignment: AlignmentDirectional.center,
                   children: [
-                    ...activeRythms.map((rythm) => PolygonWidget(
+                    ...activeRythms.map((rythm) => _StaticWidget(
                           rythm: rythm,
                         )),
-                    ...activeRythms.map((rythm) => RythmWidget(
+                    ...activeRythms.map((rythm) => _MovingWidget(
                           rythm: rythm,
                           startTime: startTime,
                         ))
@@ -99,7 +100,7 @@ class _PolyRythmsState extends State<PolyRythms> {
         ));
   }
 
-  void selectRythm(int rythm) {
+  void _selectRythm(int rythm) {
     setState(() {
       if (activeRythms.contains(rythm)) {
         activeRythms.remove(rythm);
@@ -110,16 +111,13 @@ class _PolyRythmsState extends State<PolyRythms> {
   }
 }
 
-class RythmSelector extends StatelessWidget {
+class _RythmSelector extends StatelessWidget {
   final int rythm;
   final bool active;
   final void Function(int) onTap;
 
-  const RythmSelector(
-      {super.key,
-      required this.rythm,
-      required this.active,
-      required this.onTap});
+  const _RythmSelector(
+      {required this.rythm, required this.active, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -130,20 +128,8 @@ class RythmSelector extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 32.0),
       child: GestureDetector(
         onTap: () => onTap(rythm),
-        child: Container(
-          width: 80,
-          height: 60,
-          decoration: BoxDecoration(
-            borderRadius: const BorderRadius.all(Radius.circular(16)),
-            color: Colors.black,
-            boxShadow: [
-              BoxShadow(
-                color: color,
-                blurRadius: 4.0,
-                spreadRadius: 2.0,
-              )
-            ],
-          ),
+        child: SelectContainer(
+          shadowColor: color,
           child: Center(
             child: Text(
               "$rythm",
@@ -156,16 +142,16 @@ class RythmSelector extends StatelessWidget {
   }
 }
 
-class RythmWidget extends StatefulWidget {
+class _MovingWidget extends StatefulWidget {
   final int rythm;
   final DateTime startTime;
-  const RythmWidget({super.key, required this.rythm, required this.startTime});
+  const _MovingWidget({required this.rythm, required this.startTime});
 
   @override
-  State<RythmWidget> createState() => _RythmWidgetState();
+  State<_MovingWidget> createState() => _MovingWidgetState();
 }
 
-class _RythmWidgetState extends State<RythmWidget> {
+class _MovingWidgetState extends State<_MovingWidget> {
   late Timer renderTimer;
 
   /// Between 0 and 1
@@ -254,9 +240,9 @@ Offset positionFromDistance(double distance, int rythm) {
   return Offset(x, y);
 }
 
-class PolygonWidget extends StatelessWidget {
+class _StaticWidget extends StatelessWidget {
   final int rythm;
-  const PolygonWidget({super.key, required this.rythm});
+  const _StaticWidget({required this.rythm});
 
   @override
   Widget build(BuildContext context) {

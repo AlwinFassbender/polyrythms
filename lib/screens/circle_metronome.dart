@@ -22,23 +22,23 @@ class CircleMetronome extends StatelessWidget {
           child: Stack(
             alignment: AlignmentDirectional.center,
             children: [
-              StaticWidget(radius),
-              MovingWidget(radius),
+              _StaticWidget(radius),
+              _MovingWidget(radius),
             ],
           ),
         ));
   }
 }
 
-class MovingWidget extends StatefulWidget {
+class _MovingWidget extends StatefulWidget {
   final double radius;
-  const MovingWidget(this.radius, {super.key});
+  const _MovingWidget(this.radius);
 
   @override
-  State<MovingWidget> createState() => _MovingWidgetState();
+  State<_MovingWidget> createState() => _MovingWidgetState();
 }
 
-class _MovingWidgetState extends State<MovingWidget> {
+class _MovingWidgetState extends State<_MovingWidget> {
   final startTime = DateTime.now();
   int elapsedTimeInMs = 0;
   late Timer renderTimer;
@@ -159,9 +159,9 @@ double _calculateVelocity(int index, double radius) {
   return cycleCompletionFactor * indexFactor * speedFactor;
 }
 
-class StaticWidget extends StatelessWidget {
+class _StaticWidget extends StatelessWidget {
   final double radius;
-  const StaticWidget(this.radius, {super.key});
+  const _StaticWidget(this.radius);
 
   @override
   Widget build(BuildContext context) {
@@ -185,7 +185,10 @@ class CirclePainter extends CustomPainter {
 
     canvas.drawArc(
       Rect.fromCenter(
-          center: const Offset(0, 0), width: 2 * radius, height: 2 * radius),
+        center: const Offset(0, 0),
+        width: 2 * radius,
+        height: 2 * radius,
+      ),
       0,
       2 * math.pi,
       false,

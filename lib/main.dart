@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:polyrythms/screens/box_metronome.dart';
 import 'package:polyrythms/screens/circle_metronome.dart';
 import 'package:polyrythms/screens/poly_rythms.dart';
 import 'package:polyrythms/screens/rainbow_pendulum.dart';
@@ -24,11 +25,18 @@ class MyApp extends StatelessWidget {
         RainbowPendulum.destination: (context) => const RainbowPendulum(),
         PolyRythms.destination: (context) => const PolyRythms(),
         CircleMetronome.destination: (context) => const CircleMetronome(),
+        BoxMetronome.destination: (context) => const BoxMetronome(),
       },
       theme: ThemeData(
         useMaterial3: true,
         fontFamily: 'RubikMonoOne',
         primaryColor: Colors.white,
+        textTheme: const TextTheme(
+          bodyMedium: TextStyle(
+            color: Colors.white,
+            fontSize: 24,
+          ),
+        ),
       ),
     );
   }
@@ -74,12 +82,16 @@ class HomeScreen extends StatelessWidget {
           destination: RainbowPendulum.destination,
         ),
         Page(
-          icon: PolygonIcon(width: iconSize),
+          icon: _PolygonIcon(width: iconSize),
           destination: PolyRythms.destination,
         ),
         Page(
-          icon: MetronomeIcon(width: iconSize),
+          icon: _MetronomeIcon(width: iconSize),
           destination: CircleMetronome.destination,
+        ),
+        Page(
+          icon: _BoxIcon(width: iconSize),
+          destination: BoxMetronome.destination,
         ),
       ],
     )));
@@ -157,9 +169,9 @@ class RainbowPainter extends CustomPainter {
   }
 }
 
-class MetronomeIcon extends StatelessWidget {
+class _MetronomeIcon extends StatelessWidget {
   final double width;
-  const MetronomeIcon({required this.width, super.key});
+  const _MetronomeIcon({required this.width});
 
   @override
   Widget build(BuildContext context) {
@@ -183,9 +195,28 @@ class MetronomeIcon extends StatelessWidget {
   }
 }
 
-class PolygonIcon extends StatelessWidget {
+class _BoxIcon extends StatelessWidget {
   final double width;
-  const PolygonIcon({required this.width, super.key});
+  const _BoxIcon({required this.width});
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        CustomPaint(
+          painter: RectanglePainter(
+              width: width,
+              height: width * 9 / 16,
+              strokeWidth: _iconStrokeWidth(width)),
+        ),
+      ],
+    );
+  }
+}
+
+class _PolygonIcon extends StatelessWidget {
+  final double width;
+  const _PolygonIcon({required this.width});
 
   @override
   Widget build(BuildContext context) {
