@@ -283,6 +283,7 @@ class _MovingWidgetState extends State<_MovingWidget> {
   @override
   void dispose() {
     super.dispose();
+    cancelTimers();
   }
 
   @override
