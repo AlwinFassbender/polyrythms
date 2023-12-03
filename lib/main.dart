@@ -205,9 +205,21 @@ class _BoxIcon extends StatelessWidget {
       children: [
         CustomPaint(
           painter: RectanglePainter(
-              width: width,
-              height: width * 9 / 16,
-              strokeWidth: _iconStrokeWidth(width)),
+            width: width,
+            height: width * 9 / 16,
+            strokeWidth: _iconStrokeWidth(width),
+          ),
+        ),
+        CustomPaint(
+          painter: DVDLogoPainter(
+            timePassedInMs: 301000,
+            height: width * 9 / 16,
+            width: width,
+            velocityY: 0.0028,
+            velocityX: 0.001,
+            strokeWidth: _iconStrokeWidth(width),
+            showDot: false,
+          ),
         ),
       ],
     );
@@ -222,7 +234,7 @@ class _PolygonIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        ...{2, 4, 6}.map(
+        ...{4, 8}.map(
           (rythm) => CustomPaint(
             painter: PolygonPainter(
                 rythm: rythm,

@@ -26,8 +26,8 @@ class BoxMetronome extends StatefulWidget {
 
 class _BoxMetronomeState extends State<BoxMetronome> {
   double _velocity = 0.0001;
-  int _verticalRythm = 1;
-  int _horizontalRythm = 1;
+  int _verticalRythm = 69;
+  int _horizontalRythm = 420;
 
   @override
   Widget build(BuildContext context) {
@@ -101,8 +101,8 @@ class _RythmSelectorState extends State<_RythmSelector> {
 
   late double sliderValue = getSliderValue(velocity);
 
-  final double minVelocity = 0.00001;
-  final double maxVelocity = 0.1;
+  final double minVelocity = 0.00005;
+  final double maxVelocity = 0.005;
 
   late final double minLog = math.log(minVelocity);
   late final double maxLog = math.log(maxVelocity);
@@ -146,16 +146,20 @@ class _RythmSelectorState extends State<_RythmSelector> {
                         sliderValue = value;
                         velocity = getLogValue(value);
                       }))),
-          _RythmTextField((p0) {
-            setState(() {
-              verticalRythm = p0;
-            });
-          }),
-          _RythmTextField((p0) {
-            setState(() {
-              horizontalRythm = p0;
-            });
-          }),
+          _RythmTextField(
+              initialValue: widget.verticalRythm,
+              onChanged: (p0) {
+                setState(() {
+                  verticalRythm = p0;
+                });
+              }),
+          _RythmTextField(
+              initialValue: widget.horizontalRythm,
+              onChanged: (p0) {
+                setState(() {
+                  horizontalRythm = p0;
+                });
+              }),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 32.0),
             child: GestureDetector(
@@ -181,7 +185,8 @@ class _RythmSelectorState extends State<_RythmSelector> {
 
 class _RythmTextField extends StatelessWidget {
   final void Function(int) onChanged;
-  const _RythmTextField(this.onChanged);
+  final int initialValue;
+  const _RythmTextField({required this.onChanged, required this.initialValue});
 
   @override
   Widget build(BuildContext context) {
@@ -199,7 +204,7 @@ class _RythmTextField extends StatelessWidget {
             border: UnderlineInputBorder(
                 borderSide: BorderSide(color: Colors.white)),
           ),
-          initialValue: "1",
+          initialValue: "$initialValue",
           keyboardType: TextInputType.number,
           onChanged: (value) {
             final rythm = int.tryParse(value);
@@ -240,8 +245,6 @@ class _MovingWidgetState extends State<_MovingWidget> {
   late int horizontalRythm;
   late int verticalRythm;
 
-  late double xFraction;
-  late double yFraction;
   late double angleAlpha;
   late double angleBeta;
 
@@ -260,18 +263,15 @@ class _MovingWidgetState extends State<_MovingWidget> {
     height = widget.height;
     horizontalRythm = widget.horizontalRythm;
     verticalRythm = widget.verticalRythm;
-    xFraction = horizontalRythm > verticalRythm
+    final xFraction = horizontalRythm > verticalRythm
         ? width
-        : width * horizontalRythm / verticalRythm;
-    yFraction = verticalRythm > horizontalRythm
+        : width * verticalRythm / horizontalRythm;
+    final yFraction = verticalRythm > horizontalRythm
         ? height
         : height * horizontalRythm / verticalRythm;
-    angleAlpha = math.atan(xFraction / yFraction);
-    angleBeta = math.pi / 2 - angleAlpha;
     velocityY = widget.velocity * yFraction;
     velocityX = widget.velocity * xFraction;
     startTime = widget.startTime;
-    timePassedInMs;
     verticalSoundTimer = Timer.periodic(
         Duration(milliseconds: widget.height ~/ velocityY), (timer) {});
     horizontalSoundTimer = Timer.periodic(
@@ -279,6 +279,7 @@ class _MovingWidgetState extends State<_MovingWidget> {
     // 60 fps
     renderTimer =
         Timer.periodic(const Duration(milliseconds: 1000 ~/ 60), (timer) {
+      if (!mounted) return;
       setState(() {
         timePassedInMs = DateTime.now().difference(startTime).inMilliseconds;
       });
@@ -288,7 +289,6 @@ class _MovingWidgetState extends State<_MovingWidget> {
   @override
   void didUpdateWidget(_MovingWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-
     init();
   }
 
@@ -301,13 +301,9 @@ class _MovingWidgetState extends State<_MovingWidget> {
   @override
   void dispose() {
     super.dispose();
-    for (final timer in [
-      renderTimer,
-      verticalSoundTimer,
-      horizontalSoundTimer
-    ]) {
-      timer.cancel();
-    }
+    renderTimer.cancel();
+    verticalSoundTimer.cancel();
+    horizontalSoundTimer.cancel();
   }
 
   @override
@@ -330,38 +326,106 @@ class DVDLogoPainter extends CustomPainter {
   final double height;
   final double velocityY;
   final double velocityX;
-  const DVDLogoPainter({
+  final bool showDot;
+  final double strokeWidth;
+  DVDLogoPainter({
     required this.timePassedInMs,
     required this.height,
     required this.width,
     required this.velocityY,
     required this.velocityX,
+    this.showDot = true,
+    this.strokeWidth = 3,
   });
+
+  late final trailPaint = Paint()
+    ..color = Colors.white
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = strokeWidth;
+
+  drawTrail(Path path, int timeRemaining, double x, double y) {
+    int xBounces = calculateBounces(velocityX, timeRemaining, width);
+    int yBounces = calculateBounces(velocityY, timeRemaining, height);
+
+    final timeTerminationCondiiton = timeRemaining < 0;
+    final bounceTerminationCondition = xBounces == 0 && yBounces == 0;
+    final velocityTerminationCondition = velocityX * timeRemaining <= width &&
+        velocityY * timeRemaining <= height;
+    if (timeTerminationCondiiton ||
+        bounceTerminationCondition ||
+        velocityTerminationCondition) {
+      return;
+    }
+
+    final distanceSinceLastXCollision = xBounces.isEven ? x : width - x;
+    final distanceSinceLastYCollision = yBounces.isEven ? y : height - y;
+
+    double lastCollisionX, lastCollisionY;
+    double timeSinceLastXCollision = distanceSinceLastXCollision / velocityX;
+    double timeSinceLastYCollision = distanceSinceLastYCollision / velocityY;
+
+    if (timeSinceLastXCollision < timeSinceLastYCollision) {
+      lastCollisionX = xBounces.isEven ? 0 : width;
+      lastCollisionY = yBounces.isEven
+          ? y - timeSinceLastXCollision * velocityY
+          : y + timeSinceLastXCollision * velocityY;
+      timeRemaining -= math.max(1, timeSinceLastXCollision.toInt());
+    } else {
+      lastCollisionY = yBounces.isEven ? 0 : height;
+      lastCollisionX = xBounces.isEven
+          ? x - timeSinceLastYCollision * velocityX
+          : x + timeSinceLastYCollision * velocityX;
+      timeRemaining -= math.max(1, timeSinceLastYCollision.toInt());
+    }
+
+    path.lineTo(lastCollisionX - width / 2, lastCollisionY - height / 2);
+
+    drawTrail(path, timeRemaining, lastCollisionX, lastCollisionY);
+  }
 
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
       ..color = Colors.white
       ..style = PaintingStyle.fill;
-    final xCount = (velocityX * timePassedInMs) ~/ width;
-    final xComponent = (velocityX * timePassedInMs) % width;
-    final x = xCount.isEven ? -width / 2 + xComponent : width / 2 - xComponent;
-    final yCount = (velocityY * timePassedInMs) ~/ height;
-    final yComponent = (velocityY * timePassedInMs) % height;
-    final y =
-        yCount.isEven ? -height / 2 + yComponent : height / 2 - yComponent;
 
-    canvas.drawCircle(
-      Offset(x, y),
-      20,
-      paint,
-    );
+    final path = Path();
+
+    // Calculate current position
+    double x = calculateCurrentPosition(velocityX, timePassedInMs, width);
+    double y = calculateCurrentPosition(velocityY, timePassedInMs, height);
+
+    path.moveTo(x - width / 2, y - height / 2);
+
+    drawTrail(path, timePassedInMs, x, y);
+
+    path.lineTo(-width / 2, -height / 2);
+    canvas.drawPath(path, trailPaint);
+
+    if (showDot)
+      canvas.drawCircle(Offset(x - width / 2, y - height / 2), 20, paint);
   }
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) {
     return true;
   }
+}
+
+double calculateCurrentPosition(
+    double velocity, int timePassedInMs, double size) {
+  final dist = velocity * timePassedInMs % size;
+
+  final bounces = calculateBounces(velocity, timePassedInMs, size);
+  if (bounces % 2 == 1) {
+    return size - dist;
+  }
+  return dist;
+}
+
+int calculateBounces(double velocity, int timePassedInMs, double size,
+    [double startOffset = 0]) {
+  return (velocity * timePassedInMs ~/ size);
 }
 
 class _StaticWidget extends StatelessWidget {
