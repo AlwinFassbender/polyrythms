@@ -49,12 +49,11 @@ class _PolyRythmsState extends State<PolyRythms> {
   final List<Timer> soundTimers = [];
   final activeRythms = <int>{rythms.keys.elementAt(1)};
 
+// TODO: add controls
   @override
   void dispose() {
     super.dispose();
-    for (final timer in soundTimers) {
-      timer.cancel();
-    }
+    cancelTimers();
   }
 
   @override
@@ -67,6 +66,12 @@ class _PolyRythmsState extends State<PolyRythms> {
           print("playing key $i");
         }
       }));
+    }
+  }
+
+  void cancelTimers() {
+    for (final timer in soundTimers) {
+      timer.cancel();
     }
   }
 
@@ -91,14 +96,17 @@ class _PolyRythmsState extends State<PolyRythms> {
                 child: Stack(
                   alignment: AlignmentDirectional.center,
                   children: [
-                    ...activeRythms.map((rythm) => _StaticWidget(
-                          rythm: rythm,
-                        )),
-                    ...activeRythms.map((rythm) => _MovingWidget(
-                          rythm: rythm,
-                          startTime: startTime,
-                        ))
-                    // const RythmWidget(),
+                    ...activeRythms.map(
+                      (rythm) => _StaticWidget(
+                        rythm: rythm,
+                      ),
+                    ),
+                    ...activeRythms.map(
+                      (rythm) => _MovingWidget(
+                        rythm: rythm,
+                        startTime: startTime,
+                      ),
+                    )
                   ],
                 ),
               ),

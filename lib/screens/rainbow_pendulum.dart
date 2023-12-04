@@ -159,7 +159,7 @@ class _RythmSelectorState extends State<_RythmSelector> {
   final double _minFactor = 1;
   final double _maxFactor = 1000;
 
-  final double _minDelta = 0.001;
+  final double _minDelta = 0.01;
   final double _maxDelta = 0.99;
 
   String padWithZeros(num number, num maxDisplayValue) {

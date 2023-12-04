@@ -44,7 +44,6 @@ class SoundpoolInitializerState extends State<SoundpoolInitializer> {
     setState(() {
       _soundpoolOptions = soundpoolOptions;
       _pool = Soundpool.fromOptions(options: _soundpoolOptions);
-      print('pool updated: $_pool');
     });
   }
 }
@@ -182,9 +181,11 @@ class _MetronomeIcon extends StatelessWidget {
         ),
         CustomPaint(
           painter: MetronomePointPainter(
+            velocityFactor: 12000,
+            velocityDelta: 0.9,
             radius: width * _circleIconScaleFactor / 2,
-            elapsedTimeInMs: 6000,
-            numItems: 666,
+            elapsedTimeInMs: 26650,
+            numItems: 54,
             circleRadius: _iconStrokeWidth(width) / 2,
             color: Colors.white,
           ),
