@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:polyrythms/functions/calculate_radius.dart';
+import 'package:polyrythms/widgets/control_toggle.dart';
 import 'package:polyrythms/widgets/selection_container.dart';
 import 'package:soundpool/soundpool.dart';
 
@@ -86,6 +87,7 @@ class _RainbowPendulumScreenState extends State<RainbowPendulumScreen> {
   double _velocityDelta = 0.10;
   double _velocityFactor = 100;
   DateTime _startTime = DateTime.now();
+  bool _showControls = false;
   @override
   Widget build(BuildContext context) {
     final radius = calculateRadius(MediaQuery.sizeOf(context));
@@ -94,20 +96,19 @@ class _RainbowPendulumScreenState extends State<RainbowPendulumScreen> {
       backgroundColor: Colors.black,
       body: Column(
         children: [
-          _RythmSelector(
-            active: true,
-            velocityDelta: _velocityDelta,
-            velocityFactor: _velocityFactor,
-            onConfirm: (velocityDelta, velocityFactor) {
-              setState(() {
-                _velocityDelta = velocityDelta;
-                _velocityFactor = velocityFactor;
-                _startTime = DateTime.now();
-              });
-
-              print("running new animation with velocityDelta: $velocityDelta, velocityFactor: $velocityFactor");
-            },
-          ),
+          ControlToggle((active) => setState(() => _showControls = active)),
+          if (_showControls)
+            _RythmSelector(
+              velocityDelta: _velocityDelta,
+              velocityFactor: _velocityFactor,
+              onConfirm: (velocityDelta, velocityFactor) {
+                setState(() {
+                  _velocityDelta = velocityDelta;
+                  _velocityFactor = velocityFactor;
+                  _startTime = DateTime.now();
+                });
+              },
+            ),
           Expanded(
             child: Center(
               child: Stack(
@@ -133,13 +134,11 @@ class _RainbowPendulumScreenState extends State<RainbowPendulumScreen> {
 }
 
 class _RythmSelector extends StatefulWidget {
-  final bool active;
   final void Function(double velocityDelta, double velocity) onConfirm;
   final double velocityDelta;
   final double velocityFactor;
 
   const _RythmSelector({
-    required this.active,
     required this.onConfirm,
     required this.velocityDelta,
     required this.velocityFactor,

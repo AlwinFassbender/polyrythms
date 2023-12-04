@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:polyrythms/functions/calculate_radius.dart';
 import 'package:polyrythms/gen/assets.gen.dart';
+import 'package:polyrythms/widgets/control_toggle.dart';
 import 'package:polyrythms/widgets/selection_container.dart';
 import 'package:soundpool/soundpool.dart';
 
@@ -40,6 +41,7 @@ class _BoxMetronomeState extends State<BoxMetronome> {
   double _velocity = 0.00025;
   int _verticalRythm = 69;
   int _horizontalRythm = 420;
+  bool _showControls = false;
 
   @override
   Widget build(BuildContext context) {
@@ -47,53 +49,57 @@ class _BoxMetronomeState extends State<BoxMetronome> {
     final width = radius * 2;
     final height = radius * 2 * 9 / 16;
     return Scaffold(
-        backgroundColor: Colors.black,
-        body: FutureBuilder(
-            future: setAssets(),
-            builder: (context, snapshot) {
-              final data = snapshot.data;
-              if (snapshot.connectionState != ConnectionState.done || data == null) {
-                return const SizedBox.shrink();
-              }
-              return Column(
-                children: [
-                  _RythmSelector(
-                    active: true,
-                    verticalRythm: _verticalRythm,
-                    horizontalRythm: _horizontalRythm,
-                    velocity: _velocity,
-                    onConfirm: (verticalRythm, horizontalRythm, velocity) {
-                      setState(() {
-                        _verticalRythm = verticalRythm;
-                        _horizontalRythm = horizontalRythm;
-                        _velocity = velocity;
-                      });
-                    },
-                  ),
-                  Expanded(
-                    child: Center(
-                      child: Stack(
-                        alignment: AlignmentDirectional.center,
-                        children: [
-                          _StaticWidget(width: width, height: height),
-                          _MovingWidget(
-                            startTime: DateTime.now(),
-                            width: width,
-                            height: height,
-                            velocity: _velocity,
-                            horizontalRythm: _horizontalRythm,
-                            verticalRythm: _verticalRythm,
-                            soundpool: widget.pool,
-                            verticalSoundId: data[0],
-                            horizontalSoundId: data[1],
-                          ),
-                        ],
+      backgroundColor: Colors.black,
+      body: FutureBuilder(
+        future: setAssets(),
+        builder: (context, snapshot) {
+          final data = snapshot.data;
+          if (snapshot.connectionState != ConnectionState.done || data == null) {
+            return const SizedBox.shrink();
+          }
+          return Column(
+            children: [
+              ControlToggle((active) => setState(() => _showControls = active)),
+              if (_showControls)
+                _RythmSelector(
+                  active: true,
+                  verticalRythm: _verticalRythm,
+                  horizontalRythm: _horizontalRythm,
+                  velocity: _velocity,
+                  onConfirm: (verticalRythm, horizontalRythm, velocity) {
+                    setState(() {
+                      _verticalRythm = verticalRythm;
+                      _horizontalRythm = horizontalRythm;
+                      _velocity = velocity;
+                    });
+                  },
+                ),
+              Expanded(
+                child: Center(
+                  child: Stack(
+                    alignment: AlignmentDirectional.center,
+                    children: [
+                      _StaticWidget(width: width, height: height),
+                      _MovingWidget(
+                        startTime: DateTime.now(),
+                        width: width,
+                        height: height,
+                        velocity: _velocity,
+                        horizontalRythm: _horizontalRythm,
+                        verticalRythm: _verticalRythm,
+                        soundpool: widget.pool,
+                        verticalSoundId: data[0],
+                        horizontalSoundId: data[1],
                       ),
-                    ),
+                    ],
                   ),
-                ],
-              );
-            }));
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
   }
 
   Future<List<int>> setAssets() async {

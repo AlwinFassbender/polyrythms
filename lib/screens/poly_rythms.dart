@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:polyrythms/widgets/control_toggle.dart';
 import 'package:polyrythms/widgets/selection_container.dart';
 import 'package:soundpool/soundpool.dart';
 
@@ -49,6 +50,8 @@ class _PolyRythmsState extends State<PolyRythms> {
   final List<Timer> soundTimers = [];
   final activeRythms = <int>{rythms.keys.elementAt(1)};
 
+  bool _showControls = false;
+
 // TODO: add controls
   @override
   void dispose() {
@@ -81,16 +84,18 @@ class _PolyRythmsState extends State<PolyRythms> {
         backgroundColor: Colors.black,
         body: Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.only(top: 100),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  ...rythms.keys
-                      .map((key) => _RythmSelector(rythm: key, active: activeRythms.contains(key), onTap: _selectRythm))
-                ],
+            ControlToggle((active) => setState(() => _showControls = active)),
+            if (_showControls)
+              Padding(
+                padding: const EdgeInsets.only(top: 100),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ...rythms.keys.map(
+                        (key) => _RythmSelector(rythm: key, active: activeRythms.contains(key), onTap: _selectRythm))
+                  ],
+                ),
               ),
-            ),
             Expanded(
               child: Center(
                 child: Stack(

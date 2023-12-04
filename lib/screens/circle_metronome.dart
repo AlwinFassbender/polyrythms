@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:polyrythms/functions/calculate_radius.dart';
 import 'package:polyrythms/screens/rainbow_pendulum.dart';
+import 'package:polyrythms/widgets/control_toggle.dart';
 import 'package:polyrythms/widgets/selection_container.dart';
 import 'package:rainbow_color/rainbow_color.dart';
 import 'package:soundpool/soundpool.dart';
@@ -66,6 +67,8 @@ class _CircleMetronomeScreenState extends State<CircleMetronomeScreen> {
   double _velocityFactor = 10000;
   int _numItems = 250;
 
+  bool _showControls = false;
+
   @override
   Widget build(BuildContext context) {
     final radius = calculateRadius(MediaQuery.sizeOf(context)) * 0.8;
@@ -74,20 +77,21 @@ class _CircleMetronomeScreenState extends State<CircleMetronomeScreen> {
       backgroundColor: Colors.black,
       body: Column(
         children: [
-          _RythmSelector(
-            active: true,
-            onConfirm: (velocityDelta, velocityFactor, numItems) {
-              setState(() {
-                startTime = DateTime.now();
-                _velocityDelta = velocityDelta;
-                _velocityFactor = velocityFactor;
-                _numItems = numItems;
-              });
-            },
-            velocityDelta: _velocityDelta,
-            velocityFactor: _velocityFactor,
-            numItems: _numItems,
-          ),
+          ControlToggle((active) => setState(() => _showControls = active)),
+          if (_showControls)
+            _RythmSelector(
+              onConfirm: (velocityDelta, velocityFactor, numItems) {
+                setState(() {
+                  startTime = DateTime.now();
+                  _velocityDelta = velocityDelta;
+                  _velocityFactor = velocityFactor;
+                  _numItems = numItems;
+                });
+              },
+              velocityDelta: _velocityDelta,
+              velocityFactor: _velocityFactor,
+              numItems: _numItems,
+            ),
           Expanded(
             child: Center(
               child: Stack(
@@ -114,14 +118,12 @@ class _CircleMetronomeScreenState extends State<CircleMetronomeScreen> {
 }
 
 class _RythmSelector extends StatefulWidget {
-  final bool active;
   final void Function(double velocityDelta, double velocityFactor, int numItems) onConfirm;
   final double velocityDelta;
   final double velocityFactor;
   final int numItems;
 
   const _RythmSelector({
-    required this.active,
     required this.onConfirm,
     required this.velocityDelta,
     required this.velocityFactor,
