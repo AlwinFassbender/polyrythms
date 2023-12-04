@@ -249,13 +249,11 @@ class _RythmSelectorState extends State<_RythmSelector> {
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 32.0),
-            child: GestureDetector(
+            child: SelectContainer(
               onTap: () => widget.onConfirm(_velocityDelta, _velocityFactor, _numItems),
-              child: const SelectContainer(
-                child: Center(
-                  child: Text(
-                    "Set",
-                  ),
+              child: const Center(
+                child: Text(
+                  "Set",
                 ),
               ),
             ),

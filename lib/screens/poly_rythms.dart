@@ -140,15 +140,13 @@ class _RythmSelector extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 32.0),
-      child: GestureDetector(
+      child: SelectContainer(
         onTap: () => onTap(rythm),
-        child: SelectContainer(
-          shadowColor: color,
-          child: Center(
-            child: Text(
-              "$rythm",
-              style: TextStyle(fontSize: 20, color: color),
-            ),
+        shadowColor: color,
+        child: Center(
+          child: Text(
+            "$rythm",
+            style: TextStyle(fontSize: 20, color: color),
           ),
         ),
       ),
