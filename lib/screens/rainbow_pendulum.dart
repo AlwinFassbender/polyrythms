@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:polyrythms/functions/calculate_radius.dart';
+import 'package:polyrythms/functions/pad_with_zeros.dart';
 import 'package:polyrythms/widgets/control_toggle.dart';
 import 'package:polyrythms/widgets/selection_container.dart';
 import 'package:soundpool/soundpool.dart';
@@ -30,6 +31,7 @@ const colors = [
   Color(0xFFFDDFD5),
 ];
 
+const _radiusDelta = 0.8;
 final _numItems = colors.length;
 
 double calculateYOffset(double radius) {
@@ -67,7 +69,7 @@ class RainbowPendulum extends StatelessWidget {
   Future<List<int>> setAssets() async {
     final List<int> soundIds = [];
     for (int i = 1; i <= _numItems; i++) {
-      soundIds.add(await soundpool.load(await rootBundle.load('assets/sound/key-$i.mp3')));
+      soundIds.add(await soundpool.load(await rootBundle.load('assets/sound/key-$i.wav')));
     }
     return soundIds;
   }
@@ -152,19 +154,14 @@ class _RythmSelectorState extends State<_RythmSelector> {
   late double _velocityFactor;
   late double _velocityDelta;
 
-  double get _factorSliderValue => ((_velocityFactor - _minFactor) / (_maxFactor - _minFactor)).clamp(0, 1);
-  double get _deltaSliderValue => ((_velocityDelta - _minDelta) / (_maxDelta - _minDelta)).clamp(0, 1);
+  double get _factorSliderValue => (_velocityFactor - _minFactor) / (_maxFactor - _minFactor);
+  double get _deltaSliderValue => (_velocityDelta - _minDelta) / (_maxDelta - _minDelta);
 
   final double _minFactor = 1;
   final double _maxFactor = 1000;
 
   final double _minDelta = 0.01;
   final double _maxDelta = 0.99;
-
-  String padWithZeros(num number, num maxDisplayValue) {
-    final maxDigits = maxDisplayValue.toString().length;
-    return number.toString().padLeft(maxDigits, '0');
-  }
 
   @override
   void initState() {
@@ -371,7 +368,7 @@ class PointPainter extends CustomPainter {
 
       canvas.drawCircle(
         Offset(x, y),
-        7,
+        0.5 * _radiusDelta * radius / _numItems,
         paint,
       );
     }
@@ -384,8 +381,8 @@ class PointPainter extends CustomPainter {
 }
 
 double _calculateArcRadius(int index, double radius) {
-  final offset = radius * 0.8 / _numItems;
-  return radius * 0.2 + offset * (index + 1);
+  final offset = radius * _radiusDelta / _numItems;
+  return radius * (1 - _radiusDelta) + offset * (index + 1);
 }
 
 double _calculateVelocity(
