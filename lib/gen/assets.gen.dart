@@ -78,6 +78,24 @@ class $AssetsSoundGen {
   /// File path: assets/sound/key-9.mp3
   String get key9 => 'assets/sound/key-9.mp3';
 
+  /// File path: assets/sound/synth-0.wav
+  String get synth0 => 'assets/sound/synth-0.wav';
+
+  /// File path: assets/sound/synth-1.wav
+  String get synth1 => 'assets/sound/synth-1.wav';
+
+  /// File path: assets/sound/synth-2.wav
+  String get synth2 => 'assets/sound/synth-2.wav';
+
+  /// File path: assets/sound/synth-3.wav
+  String get synth3 => 'assets/sound/synth-3.wav';
+
+  /// File path: assets/sound/synth-4.wav
+  String get synth4 => 'assets/sound/synth-4.wav';
+
+  /// File path: assets/sound/synth-5.wav
+  String get synth5 => 'assets/sound/synth-5.wav';
+
   /// List of all assets
   List<String> get values => [
         drumstick,
@@ -101,7 +119,13 @@ class $AssetsSoundGen {
         key6,
         key7,
         key8,
-        key9
+        key9,
+        synth0,
+        synth1,
+        synth2,
+        synth3,
+        synth4,
+        synth5
       ];
 }
 

@@ -1,12 +1,18 @@
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:polyrythms/functions/pad_with_zeros.dart';
 import 'package:polyrythms/widgets/control_toggle.dart';
 import 'package:polyrythms/widgets/selection_container.dart';
 import 'package:soundpool/soundpool.dart';
 
-const _period = 8000;
 const _polygonRadius = 200.0;
+
+/// In milliseconds
+double periodFromBpm(int bpm) {
+  return 2 * 60 * 1000 / bpm;
+}
 
 const rythms = {
   2: Info(color: Colors.blue, sound: "none"),
@@ -27,12 +33,11 @@ class Info {
   });
 }
 
-class PolyRythms extends StatefulWidget {
+class PolyRythms extends StatelessWidget {
   static const destination = "poly-rythms";
+  final Soundpool soundpool;
 
-  const PolyRythms(this.pool, {super.key});
-
-  final Soundpool pool;
+  const PolyRythms(this.soundpool, {super.key});
 
   static Route route(Soundpool pool) {
     return MaterialPageRoute(
@@ -42,17 +47,51 @@ class PolyRythms extends StatefulWidget {
   }
 
   @override
-  State<PolyRythms> createState() => _PolyRythmsState();
+  Widget build(BuildContext context) {
+    return FutureBuilder<Map<int, int>>(
+      future: setAssets(),
+      builder: (context, snapshot) {
+        final data = snapshot.data;
+        if (snapshot.connectionState != ConnectionState.done || data == null) {
+          return const SizedBox.shrink();
+        }
+        return PolyRythmsScreen(soundIds: data, soundpool: soundpool);
+      },
+    );
+  }
+
+  Future<Map<int, int>> setAssets() async {
+    final Map<int, int> soundIds = {};
+    for (final i in rythms.keys) {
+      soundIds[i] = await soundpool.load(await rootBundle.load('assets/sound/synth-$i.wav'));
+    }
+    return soundIds;
+  }
 }
 
-class _PolyRythmsState extends State<PolyRythms> {
-  final startTime = DateTime.now();
-  final List<Timer> soundTimers = [];
-  final activeRythms = <int>{rythms.keys.elementAt(1)};
+class PolyRythmsScreen extends StatefulWidget {
+  final Soundpool soundpool;
+  final Map<int, int> soundIds;
+  const PolyRythmsScreen({required this.soundIds, required this.soundpool, super.key});
+
+  @override
+  State<PolyRythmsScreen> createState() => _PolyRythmsScreenState();
+}
+
+class _PolyRythmsScreenState extends State<PolyRythmsScreen> {
+  DateTime _startTime = DateTime.now();
+  final List<Timer> _soundTimers = [];
+  final _activeRythms = <int>{rythms.keys.elementAt(1), rythms.keys.elementAt(2), rythms.keys.elementAt(3)};
+
+  int _bpm = 40;
 
   bool _showControls = false;
 
-// TODO: add controls
+  double get _bpmSliderValue => (_bpm - _minbpm) / (_maxbpm - _minbpm);
+
+  final _maxbpm = 200;
+  final _minbpm = 1;
+
   @override
   void dispose() {
     super.dispose();
@@ -62,18 +101,23 @@ class _PolyRythmsState extends State<PolyRythms> {
   @override
   void initState() {
     super.initState();
+    setTimers();
+  }
+
+  void setTimers() {
+    _startTime = DateTime.now();
     for (final i in rythms.keys) {
-      final durationInMs = _period ~/ i;
-      soundTimers.add(Timer.periodic(Duration(milliseconds: durationInMs), (timer) {
-        if (activeRythms.contains(i)) {
-          print("playing key $i");
+      final durationInMs = periodFromBpm(_bpm) ~/ i;
+      _soundTimers.add(Timer.periodic(Duration(milliseconds: durationInMs), (timer) {
+        if (_activeRythms.contains(i)) {
+          widget.soundpool.play(widget.soundIds[i]!);
         }
       }));
     }
   }
 
   void cancelTimers() {
-    for (final timer in soundTimers) {
+    for (final timer in _soundTimers) {
       timer.cancel();
     }
   }
@@ -88,11 +132,45 @@ class _PolyRythmsState extends State<PolyRythms> {
             if (_showControls)
               Padding(
                 padding: const EdgeInsets.only(top: 100),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                child: Column(
                   children: [
-                    ...rythms.keys.map(
-                        (key) => _RythmSelector(rythm: key, active: activeRythms.contains(key), onTap: _selectRythm))
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text("bpm", style: TextStyle(fontSize: 12)),
+                            Row(
+                              children: [
+                                Text(padWithZeros(_bpm, _maxbpm)),
+                                Padding(
+                                  padding: const EdgeInsets.only(right: 32.0),
+                                  child: Slider(
+                                    value: _bpmSliderValue,
+                                    onChanged: (value) => setState(
+                                      () {
+                                        _bpm = _minbpm + (value * (_maxbpm - _minbpm)).toInt();
+                                        cancelTimers();
+                                        setTimers();
+                                      },
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 32.0),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        ...rythms.keys.map((key) =>
+                            _RythmSelector(rythm: key, active: _activeRythms.contains(key), onTap: _selectRythm))
+                      ],
+                    ),
                   ],
                 ),
               ),
@@ -101,15 +179,16 @@ class _PolyRythmsState extends State<PolyRythms> {
                 child: Stack(
                   alignment: AlignmentDirectional.center,
                   children: [
-                    ...activeRythms.map(
+                    ..._activeRythms.map(
                       (rythm) => _StaticWidget(
                         rythm: rythm,
                       ),
                     ),
-                    ...activeRythms.map(
+                    ..._activeRythms.map(
                       (rythm) => _MovingWidget(
                         rythm: rythm,
-                        startTime: startTime,
+                        bpm: _bpm,
+                        startTime: _startTime,
                       ),
                     )
                   ],
@@ -122,10 +201,10 @@ class _PolyRythmsState extends State<PolyRythms> {
 
   void _selectRythm(int rythm) {
     setState(() {
-      if (activeRythms.contains(rythm)) {
-        activeRythms.remove(rythm);
+      if (_activeRythms.contains(rythm)) {
+        _activeRythms.remove(rythm);
       } else {
-        activeRythms.add(rythm);
+        _activeRythms.add(rythm);
       }
     });
   }
@@ -161,23 +240,31 @@ class _RythmSelector extends StatelessWidget {
 
 class _MovingWidget extends StatefulWidget {
   final int rythm;
+  final int bpm;
   final DateTime startTime;
-  const _MovingWidget({required this.rythm, required this.startTime});
+
+  const _MovingWidget({
+    required this.rythm,
+    required this.startTime,
+    required this.bpm,
+  });
 
   @override
   State<_MovingWidget> createState() => _MovingWidgetState();
 }
 
 class _MovingWidgetState extends State<_MovingWidget> {
-  late Timer renderTimer;
+  late Timer _renderTimer;
+
+  double get _period => periodFromBpm(widget.bpm);
 
   /// Between 0 and 1
-  double state = 0;
+  double _state = 0;
 
   @override
   void dispose() {
     super.dispose();
-    renderTimer.cancel();
+    _renderTimer.cancel();
   }
 
   @override
@@ -185,9 +272,9 @@ class _MovingWidgetState extends State<_MovingWidget> {
     super.initState();
 
     // 60 fps
-    renderTimer = Timer.periodic(const Duration(milliseconds: 1000 ~/ 60), (timer) {
+    _renderTimer = Timer.periodic(const Duration(milliseconds: 1000 ~/ 60), (timer) {
       setState(() {
-        state = (DateTime.now().difference(widget.startTime).inMilliseconds % _period / _period);
+        _state = (DateTime.now().difference(widget.startTime).inMilliseconds % _period / _period);
       });
     });
   }
@@ -195,7 +282,7 @@ class _MovingWidgetState extends State<_MovingWidget> {
   @override
   Widget build(BuildContext context) {
     return CustomPaint(
-      painter: RythmPainter(state: state, rythm: widget.rythm),
+      painter: RythmPainter(state: _state, rythm: widget.rythm),
     );
   }
 }
@@ -242,8 +329,8 @@ double sideLengthOfShape(double radius, int rythm) {
 Offset positionFromDistance(double distance, int rythm) {
   final sideLength = sideLengthOfShape(_polygonRadius, rythm);
   final positionOnSide = distance % sideLength;
-  final sideIndex = distance ~/ sideLength;
-  final previousIndex = sideIndex == 0 ? rythm - 1 : sideIndex - 1;
+  final previousIndex = distance ~/ sideLength;
+  final sideIndex = previousIndex == rythm - 1 ? 0 : previousIndex + 1;
   final offset = getOffset(rythm, sideIndex, _polygonRadius);
   final previousOffset = getOffset(rythm, previousIndex, _polygonRadius);
 
@@ -271,7 +358,7 @@ class PolygonPainter extends CustomPainter {
   const PolygonPainter({
     required this.rythm,
     this.radius = _polygonRadius,
-    this.strokeWidth = 12,
+    this.strokeWidth = 3,
   });
 
   @override
@@ -303,7 +390,7 @@ class PolygonPainter extends CustomPainter {
 }
 
 Offset getOffset(int rythm, int index, double radius) {
-  final angle = (2 * math.pi / rythm) * index + math.pi / 2;
+  final angle = (2 * math.pi / rythm) * index - math.pi / 2;
   final x = math.cos(angle) * radius;
   final y = math.sin(angle) * radius;
 

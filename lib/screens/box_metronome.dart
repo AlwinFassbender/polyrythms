@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:polyrythms/functions/calculate_radius.dart';
+import 'package:polyrythms/functions/pad_with_zeros.dart';
 import 'package:polyrythms/gen/assets.gen.dart';
 import 'package:polyrythms/widgets/control_toggle.dart';
 import 'package:polyrythms/widgets/selection_container.dart';
@@ -19,29 +20,60 @@ class Info {
   });
 }
 
-class BoxMetronome extends StatefulWidget {
+class BoxMetronome extends StatelessWidget {
   static const destination = "box-metronome";
 
-  const BoxMetronome(this.pool, {super.key});
+  final Soundpool soundpool;
 
-  final Soundpool pool;
-
-  static Route route(Soundpool pool) {
+  static Route route(Soundpool soundpool) {
     return MaterialPageRoute(
       settings: const RouteSettings(name: destination),
-      builder: (_) => BoxMetronome(pool),
+      builder: (_) => BoxMetronome(soundpool),
     );
   }
 
+  const BoxMetronome(this.soundpool, {super.key});
+
   @override
-  State<BoxMetronome> createState() => _BoxMetronomeState();
+  Widget build(BuildContext context) {
+    return FutureBuilder(
+        future: setAssets(),
+        builder: (context, snapshot) {
+          final data = snapshot.data;
+          if (snapshot.connectionState != ConnectionState.done || data == null) {
+            return const SizedBox.shrink();
+          }
+          return BoxMetronomeScreen(soundpool: soundpool, soundIds: data);
+        });
+  }
+
+  Future<List<int>> setAssets() async {
+    final List<int> soundIds = [];
+    var hihat = await rootBundle.load(Assets.sound.hiHat);
+    var drumstick = await rootBundle.load(Assets.sound.drumstick);
+    soundIds.addAll([
+      await soundpool.load(hihat),
+      await soundpool.load(drumstick),
+    ]);
+    return soundIds;
+  }
 }
 
-class _BoxMetronomeState extends State<BoxMetronome> {
+class BoxMetronomeScreen extends StatefulWidget {
+  final List<int> soundIds;
+  final Soundpool soundpool;
+  const BoxMetronomeScreen({required this.soundpool, required this.soundIds, super.key});
+
+  @override
+  State<BoxMetronomeScreen> createState() => _BoxMetronomeScreenState();
+}
+
+class _BoxMetronomeScreenState extends State<BoxMetronomeScreen> {
   double _velocity = 0.00025;
   int _verticalRythm = 69;
   int _horizontalRythm = 420;
   bool _showControls = false;
+  DateTime _startTime = DateTime.now();
 
   @override
   Widget build(BuildContext context) {
@@ -50,67 +82,49 @@ class _BoxMetronomeState extends State<BoxMetronome> {
     final height = radius * 2 * 9 / 16;
     return Scaffold(
       backgroundColor: Colors.black,
-      body: FutureBuilder(
-        future: setAssets(),
-        builder: (context, snapshot) {
-          final data = snapshot.data;
-          if (snapshot.connectionState != ConnectionState.done || data == null) {
-            return const SizedBox.shrink();
-          }
-          return Column(
-            children: [
-              ControlToggle((active) => setState(() => _showControls = active)),
-              if (_showControls)
-                _RythmSelector(
-                  active: true,
-                  verticalRythm: _verticalRythm,
-                  horizontalRythm: _horizontalRythm,
-                  velocity: _velocity,
-                  onConfirm: (verticalRythm, horizontalRythm, velocity) {
-                    setState(() {
-                      _verticalRythm = verticalRythm;
-                      _horizontalRythm = horizontalRythm;
-                      _velocity = velocity;
-                    });
-                  },
-                ),
-              Expanded(
-                child: Center(
-                  child: Stack(
-                    alignment: AlignmentDirectional.center,
-                    children: [
-                      _StaticWidget(width: width, height: height),
-                      _MovingWidget(
-                        startTime: DateTime.now(),
-                        width: width,
-                        height: height,
-                        velocity: _velocity,
-                        horizontalRythm: _horizontalRythm,
-                        verticalRythm: _verticalRythm,
-                        soundpool: widget.pool,
-                        verticalSoundId: data[0],
-                        horizontalSoundId: data[1],
-                      ),
-                    ],
+      body: Column(
+        children: [
+          ControlToggle((active) => setState(() => _showControls = active)),
+          if (_showControls)
+            _RythmSelector(
+              active: true,
+              verticalRythm: _verticalRythm,
+              horizontalRythm: _horizontalRythm,
+              velocity: _velocity,
+              onConfirm: (verticalRythm, horizontalRythm, velocity) {
+                setState(() {
+                  _verticalRythm = verticalRythm;
+                  _horizontalRythm = horizontalRythm;
+                  _velocity = velocity;
+                  _startTime = DateTime.now();
+                });
+              },
+            ),
+          Expanded(
+            child: Center(
+              child: Stack(
+                alignment: AlignmentDirectional.center,
+                children: [
+                  _StaticWidget(width: width, height: height),
+                  _MovingWidget(
+                    key: ValueKey("$_verticalRythm-$_horizontalRythm-$_velocity-$width-$height-$_startTime"),
+                    startTime: _startTime,
+                    width: width,
+                    height: height,
+                    velocity: _velocity,
+                    horizontalRythm: _horizontalRythm,
+                    verticalRythm: _verticalRythm,
+                    soundpool: widget.soundpool,
+                    verticalSoundId: widget.soundIds[0],
+                    horizontalSoundId: widget.soundIds[1],
                   ),
-                ),
+                ],
               ),
-            ],
-          );
-        },
+            ),
+          ),
+        ],
       ),
     );
-  }
-
-  Future<List<int>> setAssets() async {
-    final List<int> soundIds = [];
-    var hihat = await rootBundle.load(Assets.sound.hiHat);
-    var drumstick = await rootBundle.load(Assets.sound.drumstick);
-    soundIds.addAll([
-      await widget.pool.load(hihat),
-      await widget.pool.load(drumstick),
-    ]);
-    return soundIds;
   }
 }
 
@@ -164,11 +178,6 @@ class _RythmSelectorState extends State<_RythmSelector> {
     return (1 * velocity) ~/ minVelocity;
   }
 
-  String padWithZeros(int number) {
-    final maxDigits = maxDisplayValue.toString().length;
-    return number.toString().padLeft(maxDigits, '0');
-  }
-
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -176,7 +185,7 @@ class _RythmSelectorState extends State<_RythmSelector> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(padWithZeros(getDisplayValue(velocity))),
+          Text(padWithZeros(getDisplayValue(velocity), maxDisplayValue)),
           Padding(
               padding: const EdgeInsets.only(right: 32.0),
               child: Slider(
@@ -262,6 +271,7 @@ class _MovingWidget extends StatefulWidget {
 
   final Soundpool soundpool;
   const _MovingWidget({
+    super.key,
     required this.height,
     required this.width,
     required this.velocity,
@@ -320,13 +330,6 @@ class _MovingWidgetState extends State<_MovingWidget> {
         timePassedInMs = DateTime.now().difference(startTime).inMilliseconds;
       });
     });
-  }
-
-  @override
-  void didUpdateWidget(_MovingWidget oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    cancelTimers();
-    init();
   }
 
   @override

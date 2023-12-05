@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:polyrythms/functions/calculate_radius.dart';
+import 'package:polyrythms/functions/pad_with_zeros.dart';
 import 'package:polyrythms/screens/rainbow_pendulum.dart';
 import 'package:polyrythms/widgets/control_toggle.dart';
 import 'package:polyrythms/widgets/selection_container.dart';
@@ -151,11 +152,6 @@ class _RythmSelectorState extends State<_RythmSelector> {
 
   final double _minDelta = 0.01;
   final double _maxDelta = 0.99;
-
-  String padWithZeros(num number, num maxDisplayValue) {
-    final maxDigits = maxDisplayValue.toString().length;
-    return number.toString().padLeft(maxDigits, '0');
-  }
 
   @override
   void initState() {
