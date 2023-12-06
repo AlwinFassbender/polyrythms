@@ -327,13 +327,11 @@ class _MovingWidgetState extends State<_MovingWidget> {
           _calculateVelocity(i, widget.radius, widget.velocityFactor, widget.velocityDelta, widget.numItems);
 
       Future.delayed(Duration(milliseconds: durationInMs ~/ 2), () {
-        print("playing sound $i");
         widget.soundpool.play(widget.sounds[i]);
         soundTimers.add(
           Timer.periodic(
             Duration(milliseconds: durationInMs),
             (timer) {
-              print("playing sound $i");
               widget.soundpool.play(widget.sounds[i]);
             },
           ),

@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-// TODO: messes with setstate of the screens
-// TODO: animate the controls
 class ControlToggle extends StatefulWidget {
   final Function(bool) onToggle;
   const ControlToggle(this.onToggle, {super.key});
