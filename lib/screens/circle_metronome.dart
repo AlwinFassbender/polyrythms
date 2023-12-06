@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:polyrythms/functions/calculate_radius.dart';
-import 'package:polyrythms/functions/pad_with_zeros.dart';
 import 'package:polyrythms/functions/slider_functions.dart';
 import 'package:polyrythms/screens/rainbow_pendulum.dart';
 import 'package:polyrythms/widgets/control_toggle.dart';
@@ -137,19 +136,23 @@ class _RythmSelector extends StatefulWidget {
 }
 
 class _RythmSelectorState extends State<_RythmSelector> {
+  final pow = 2;
+
   late double _velocityFactor;
   late double _velocityDelta;
   late int _numItems;
 
   double get _factorSliderValue => normalizeValue(_velocityFactor, _minFactor, _maxFactor);
   double get _deltaSliderValue => normalizeValue(_velocityDelta, _minDelta, _maxDelta);
-  double get _numItemsSliderValue => normalizeValue(_numItems, _minItems, _maxItems);
+  double get _numItemsSliderValue => normalizeValue(math.pow(_numItems, 1 / pow), _minPowItems, _maxPowItems);
 
   final double _minFactor = 1000;
   final double _maxFactor = 100000;
 
   final int _maxItems = 1000;
   final int _minItems = 1;
+  double get _maxPowItems => math.pow(_maxItems, 1 / pow).toDouble();
+  double get _minPowItems => math.pow(_minItems, 1 / pow).toDouble();
 
   final double _minDelta = 0.01;
   final double _maxDelta = 0.99;
@@ -237,7 +240,7 @@ class _RythmSelectorState extends State<_RythmSelector> {
                       value: _numItemsSliderValue,
                       onChanged: (value) => setState(
                         () {
-                          _numItems = scaleValue(value, _minItems, _maxItems) ~/ 1;
+                          _numItems = math.pow(scaleValue(value, _minPowItems, _maxPowItems), pow).round();
                         },
                       ),
                     ),

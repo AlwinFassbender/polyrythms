@@ -154,16 +154,18 @@ class _RythmSelector extends StatefulWidget {
 }
 
 class _RythmSelectorState extends State<_RythmSelector> {
+  final pow = 4;
+
   late double _velocityFactor = widget.velocityFactor;
   late double _velocityDelta = widget.velocityDelta;
 
-  double get _factorSliderValue => normalizeValue(math.log(_velocityFactor), _minLogFactor, _maxLogFactor);
+  double get _factorSliderValue => normalizeValue(math.pow(_velocityFactor, 1 / pow), _minPowFactor, _maxPowFactor);
   double get _deltaSliderValue => normalizeValue(_velocityDelta, _minDelta, _maxDelta);
 
   final double _minFactor = 1;
   final double _maxFactor = 1000;
-  double get _minLogFactor => math.log(_minFactor);
-  double get _maxLogFactor => math.log(_maxFactor);
+  double get _minPowFactor => math.pow(_minFactor, 1 / pow).toDouble();
+  double get _maxPowFactor => math.pow(_maxFactor, 1 / pow).toDouble();
 
   final double _minDelta = 0.01;
   final double _maxDelta = 0.99;
@@ -188,7 +190,8 @@ class _RythmSelectorState extends State<_RythmSelector> {
                       value: _factorSliderValue,
                       onChanged: (value) => setState(
                         () {
-                          _velocityFactor = math.exp(scaleValue(value, _minLogFactor, _maxLogFactor));
+                          _velocityFactor =
+                              math.pow(scaleValue(value, _minPowFactor, _maxPowFactor), pow).round().toDouble();
                         },
                       ),
                     ),
