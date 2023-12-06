@@ -3,7 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:polyrythms/functions/calculate_radius.dart';
-import 'package:polyrythms/functions/pad_with_zeros.dart';
+import 'package:polyrythms/functions/slider_functions.dart';
 import 'package:polyrythms/widgets/control_toggle.dart';
 import 'package:polyrythms/widgets/selection_container.dart';
 import 'package:soundpool/soundpool.dart';
@@ -86,10 +86,12 @@ class RainbowPendulumScreen extends StatefulWidget {
 }
 
 class _RainbowPendulumScreenState extends State<RainbowPendulumScreen> {
-  double _velocityDelta = 0.10;
-  double _velocityFactor = 100;
+  double _velocityDelta = 0.20;
+  double _velocityFactor = 50;
+
   DateTime _startTime = DateTime.now();
   bool _showControls = false;
+
   @override
   Widget build(BuildContext context) {
     final radius = calculateRadius(MediaQuery.sizeOf(context));
@@ -118,6 +120,7 @@ class _RainbowPendulumScreenState extends State<RainbowPendulumScreen> {
                 children: [
                   _StaticWidget(radius),
                   _MovingWidget(
+                    key: ValueKey("$_startTime-$_velocityDelta-$_velocityFactor"),
                     startTime: _startTime,
                     radius: radius,
                     velocityFactor: _velocityFactor,
@@ -151,34 +154,19 @@ class _RythmSelector extends StatefulWidget {
 }
 
 class _RythmSelectorState extends State<_RythmSelector> {
-  late double _velocityFactor;
-  late double _velocityDelta;
+  late double _velocityFactor = widget.velocityFactor;
+  late double _velocityDelta = widget.velocityDelta;
 
-  double get _factorSliderValue => (_velocityFactor - _minFactor) / (_maxFactor - _minFactor);
-  double get _deltaSliderValue => (_velocityDelta - _minDelta) / (_maxDelta - _minDelta);
+  double get _factorSliderValue => normalizeValue(math.log(_velocityFactor), _minLogFactor, _maxLogFactor);
+  double get _deltaSliderValue => normalizeValue(_velocityDelta, _minDelta, _maxDelta);
 
   final double _minFactor = 1;
   final double _maxFactor = 1000;
+  double get _minLogFactor => math.log(_minFactor);
+  double get _maxLogFactor => math.log(_maxFactor);
 
   final double _minDelta = 0.01;
   final double _maxDelta = 0.99;
-
-  @override
-  void initState() {
-    super.initState();
-    init();
-  }
-
-  @override
-  void didUpdateWidget(covariant _RythmSelector oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    init();
-  }
-
-  void init() {
-    _velocityFactor = widget.velocityFactor;
-    _velocityDelta = widget.velocityDelta;
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -200,7 +188,7 @@ class _RythmSelectorState extends State<_RythmSelector> {
                       value: _factorSliderValue,
                       onChanged: (value) => setState(
                         () {
-                          _velocityFactor = _minFactor + value * (_maxFactor - _minFactor);
+                          _velocityFactor = math.exp(scaleValue(value, _minLogFactor, _maxLogFactor));
                         },
                       ),
                     ),
@@ -222,7 +210,7 @@ class _RythmSelectorState extends State<_RythmSelector> {
                       value: _deltaSliderValue,
                       onChanged: (value) => setState(
                         () {
-                          _velocityDelta = _minDelta + value * (_maxDelta - _minDelta);
+                          _velocityDelta = scaleValue(value, _minDelta, _maxDelta);
                         },
                       ),
                     ),
@@ -257,6 +245,7 @@ class _MovingWidget extends StatefulWidget {
   final DateTime startTime;
 
   const _MovingWidget({
+    super.key,
     required this.sounds,
     required this.radius,
     required this.soundpool,
@@ -278,13 +267,6 @@ class _MovingWidgetState extends State<_MovingWidget> {
   void dispose() {
     super.dispose();
     cancelTimers();
-  }
-
-  @override
-  void didUpdateWidget(covariant _MovingWidget oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    cancelTimers();
-    init();
   }
 
   @override

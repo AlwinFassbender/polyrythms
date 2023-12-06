@@ -4,7 +4,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:polyrythms/functions/calculate_radius.dart';
-import 'package:polyrythms/functions/pad_with_zeros.dart';
+import 'package:polyrythms/functions/slider_functions.dart';
 import 'package:polyrythms/gen/assets.gen.dart';
 import 'package:polyrythms/widgets/control_toggle.dart';
 import 'package:polyrythms/widgets/selection_container.dart';
@@ -148,34 +148,23 @@ class _RythmSelector extends StatefulWidget {
 }
 
 class _RythmSelectorState extends State<_RythmSelector> {
-  late int verticalRythm = widget.verticalRythm;
-  late int horizontalRythm = widget.horizontalRythm;
-  late double velocity = widget.velocity;
+  late int _verticalRythm = widget.verticalRythm;
+  late int _horizontalRythm = widget.horizontalRythm;
 
-  late double sliderValue = getSliderValue(velocity);
+  late double _velocity = widget.velocity;
 
-  final double minVelocity = 0.00005;
-  final double maxVelocity = 0.005;
+  double get _sliderValue => normalizeValue(math.log(_velocity), _minLog, _maxLog);
 
-  late final double minLog = math.log(minVelocity);
-  late final double maxLog = math.log(maxVelocity);
+  final double _minVelocity = 0.00005;
+  final double _maxVelocity = 0.005;
 
-  late final maxDisplayValue = (1 * maxVelocity) ~/ minVelocity;
+  double get _minLog => math.log(_minVelocity);
+  double get _maxLog => math.log(_maxVelocity);
 
-  // Convert the linear slider value to logarithmic scale
-  double getLogValue(double value) {
-    double scaledValue = minLog + (maxLog - minLog) * value;
-    return math.exp(scaledValue);
-  }
+  late final maxDisplayValue = (1 * _maxVelocity) ~/ _minVelocity;
 
-  // Convert the velocity to a linear value for the slider
-  double getSliderValue(double velocity) {
-    return (math.log(velocity) - minLog) / (maxLog - minLog);
-  }
-
-  // Convert the velocities into nicely displayable value
   int getDisplayValue(double velocity) {
-    return (1 * velocity) ~/ minVelocity;
+    return (1 * velocity) ~/ _minVelocity;
   }
 
   @override
@@ -185,33 +174,36 @@ class _RythmSelectorState extends State<_RythmSelector> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(padWithZeros(getDisplayValue(velocity), maxDisplayValue)),
+          Text(padWithZeros(getDisplayValue(_velocity), maxDisplayValue)),
           Padding(
-              padding: const EdgeInsets.only(right: 32.0),
-              child: Slider(
-                  value: sliderValue,
-                  onChanged: (value) => setState(() {
-                        sliderValue = value;
-                        velocity = getLogValue(value);
-                      }))),
+            padding: const EdgeInsets.only(right: 32.0),
+            child: Slider(
+              value: _sliderValue,
+              onChanged: (value) => setState(
+                () {
+                  _velocity = math.exp(scaleValue(value, _minLog, _maxLog));
+                },
+              ),
+            ),
+          ),
           _RythmTextField(
               initialValue: widget.verticalRythm,
               onChanged: (p0) {
                 setState(() {
-                  verticalRythm = p0;
+                  _verticalRythm = p0;
                 });
               }),
           _RythmTextField(
               initialValue: widget.horizontalRythm,
               onChanged: (p0) {
                 setState(() {
-                  horizontalRythm = p0;
+                  _horizontalRythm = p0;
                 });
               }),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 32.0),
             child: SelectContainer(
-              onTap: () => widget.onConfirm(verticalRythm, horizontalRythm, velocity),
+              onTap: () => widget.onConfirm(_verticalRythm, _horizontalRythm, _velocity),
               child: const Center(
                 child: Text(
                   "Set",

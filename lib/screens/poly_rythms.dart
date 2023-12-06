@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:polyrythms/functions/pad_with_zeros.dart';
+import 'package:polyrythms/functions/slider_functions.dart';
 import 'package:polyrythms/widgets/control_toggle.dart';
 import 'package:polyrythms/widgets/selection_container.dart';
 import 'package:soundpool/soundpool.dart';
@@ -87,7 +87,7 @@ class _PolyRythmsScreenState extends State<PolyRythmsScreen> {
 
   bool _showControls = false;
 
-  double get _bpmSliderValue => (_bpm - _minbpm) / (_maxbpm - _minbpm);
+  double get _bpmSliderValue => normalizeValue(_bpm, _minbpm, _maxbpm);
 
   final _maxbpm = 200;
   final _minbpm = 1;
@@ -150,7 +150,7 @@ class _PolyRythmsScreenState extends State<PolyRythmsScreen> {
                                     value: _bpmSliderValue,
                                     onChanged: (value) => setState(
                                       () {
-                                        _bpm = _minbpm + (value * (_maxbpm - _minbpm)).toInt();
+                                        _bpm = scaleValue(value, _minbpm, _maxbpm).toInt();
                                         cancelTimers();
                                         setTimers();
                                       },
