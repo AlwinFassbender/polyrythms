@@ -37,7 +37,7 @@ class _ControlToggleState extends State<ControlToggle> {
             });
             widget.onToggle(active);
           },
-          child: Text("show controls", style: TextStyle(color: textColor, fontSize: 20)),
+          child: Text(active ? "hide controls" : "show controls", style: TextStyle(color: textColor, fontSize: 20)),
         ),
       ),
     );

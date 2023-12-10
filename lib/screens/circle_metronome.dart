@@ -1,11 +1,13 @@
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:polyrythms/constants/constants.dart';
 import 'package:polyrythms/functions/calculate_radius.dart';
 import 'package:polyrythms/functions/slider_functions.dart';
 import 'package:polyrythms/screens/rainbow_pendulum.dart';
 import 'package:polyrythms/widgets/control_toggle.dart';
 import 'package:polyrythms/widgets/selection_container.dart';
+import 'package:polyrythms/widgets/sllider_and_number_display.dart';
 import 'package:rainbow_color/rainbow_color.dart';
 import 'package:soundpool/soundpool.dart';
 
@@ -76,24 +78,33 @@ class _CircleMetronomeScreenState extends State<CircleMetronomeScreen> {
 
     return Scaffold(
       backgroundColor: Colors.black,
-      body: Column(
-        children: [
-          ControlToggle((active) => setState(() => _showControls = active)),
-          if (_showControls)
-            _RythmSelector(
-              onConfirm: (velocityDelta, velocityFactor, numItems) {
-                setState(() {
-                  startTime = DateTime.now();
-                  _velocityDelta = velocityDelta;
-                  _velocityFactor = velocityFactor;
-                  _numItems = numItems;
-                });
-              },
-              velocityDelta: _velocityDelta,
-              velocityFactor: _velocityFactor,
-              numItems: _numItems,
+      body: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ControlToggle((active) => setState(() => _showControls = active)),
+              ],
             ),
-          Expanded(
+          ),
+          if (_showControls)
+            SliverToBoxAdapter(
+              child: _RythmSelector(
+                onConfirm: (velocityDelta, velocityFactor, numItems) {
+                  setState(() {
+                    startTime = DateTime.now();
+                    _velocityDelta = velocityDelta;
+                    _velocityFactor = velocityFactor;
+                    _numItems = numItems;
+                  });
+                },
+                velocityDelta: _velocityDelta,
+                velocityFactor: _velocityFactor,
+                numItems: _numItems,
+              ),
+            ),
+          SliverFillRemaining(
             child: Center(
               child: Stack(
                 alignment: AlignmentDirectional.center,
@@ -179,84 +190,48 @@ class _RythmSelectorState extends State<_RythmSelector> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(top: 100),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+      padding: const EdgeInsets.only(top: controlsTopPadding, right: horizontalPadding, left: horizontalPadding),
+      child: Wrap(
+        runSpacing: wrapRunSpacing,
+        spacing: wrapSpacing,
+        alignment: WrapAlignment.center,
+        crossAxisAlignment: WrapCrossAlignment.center,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text("velocity factor", style: TextStyle(fontSize: 12)),
-              Row(
-                children: [
-                  Text(padWithZeros(_velocityFactor ~/ _minFactor, _maxFactor ~/ _minFactor)),
-                  Padding(
-                    padding: const EdgeInsets.only(right: 32.0),
-                    child: Slider(
-                      value: _factorSliderValue,
-                      onChanged: (value) => setState(
-                        () {
-                          _velocityFactor = scaleValue(value, _minFactor, _maxFactor);
-                        },
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+          SliderAndNumberDisplay(
+            title: "velocity factor",
+            sliderValue: _factorSliderValue,
+            displayValue: padWithZeros(_velocityFactor ~/ _minFactor, _maxFactor ~/ _minFactor),
+            onChanged: (value) => setState(
+              () {
+                _velocityFactor = scaleValue(value, _minFactor, _maxFactor);
+              },
+            ),
           ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text("velocity delta", style: TextStyle(fontSize: 12)),
-              Row(
-                children: [
-                  Text(_velocityDelta.toStringAsFixed(2)),
-                  Padding(
-                    padding: const EdgeInsets.only(right: 32.0),
-                    child: Slider(
-                      value: _deltaSliderValue,
-                      onChanged: (value) => setState(
-                        () {
-                          _velocityDelta = scaleValue(value, _minDelta, _maxDelta);
-                        },
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+          SliderAndNumberDisplay(
+            title: "velocity delta",
+            sliderValue: _deltaSliderValue,
+            displayValue: _velocityDelta.toStringAsFixed(2),
+            onChanged: (value) => setState(
+              () {
+                _velocityDelta = scaleValue(value, _minDelta, _maxDelta);
+              },
+            ),
           ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text("dots", style: TextStyle(fontSize: 12)),
-              Row(
-                children: [
-                  Text(padWithZeros(_numItems, _maxItems)),
-                  Padding(
-                    padding: const EdgeInsets.only(right: 32.0),
-                    child: Slider(
-                      value: _numItemsSliderValue,
-                      onChanged: (value) => setState(
-                        () {
-                          _numItems = math.pow(scaleValue(value, _minPowItems, _maxPowItems), pow).round();
-                        },
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+          SliderAndNumberDisplay(
+            title: "dots",
+            sliderValue: _numItemsSliderValue,
+            displayValue: padWithZeros(_numItems, _maxItems),
+            onChanged: (value) => setState(
+              () {
+                _numItems = math.pow(scaleValue(value, _minPowItems, _maxPowItems), pow).round();
+              },
+            ),
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 32.0),
-            child: SelectContainer(
-              onTap: () => widget.onConfirm(_velocityDelta, _velocityFactor, _numItems),
-              child: const Center(
-                child: Text(
-                  "Set",
-                ),
+          SelectContainer(
+            onTap: () => widget.onConfirm(_velocityDelta, _velocityFactor, _numItems),
+            child: const Center(
+              child: Text(
+                "Set",
               ),
             ),
           )

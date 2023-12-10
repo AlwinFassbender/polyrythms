@@ -2,12 +2,12 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:polyrythms/constants/constants.dart';
 import 'package:polyrythms/functions/slider_functions.dart';
 import 'package:polyrythms/widgets/control_toggle.dart';
 import 'package:polyrythms/widgets/selection_container.dart';
+import 'package:polyrythms/widgets/sllider_and_number_display.dart';
 import 'package:soundpool/soundpool.dart';
-
-const _polygonRadius = 200.0;
 
 /// In milliseconds
 double periodFromBpm(int bpm) {
@@ -124,57 +124,58 @@ class _PolyRythmsScreenState extends State<PolyRythmsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final double radius = math.min(MediaQuery.of(context).size.width * 0.45, 200);
+
     return Scaffold(
         backgroundColor: Colors.black,
-        body: Column(
-          children: [
-            ControlToggle((active) => setState(() => _showControls = active)),
+        body: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  ControlToggle(
+                    (active) => setState(() => _showControls = active),
+                  ),
+                ],
+              ),
+            ),
             if (_showControls)
-              Padding(
-                padding: const EdgeInsets.only(top: 100),
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text("bpm", style: TextStyle(fontSize: 12)),
-                            Row(
-                              children: [
-                                Text(padWithZeros(_bpm, _maxbpm)),
-                                Padding(
-                                  padding: const EdgeInsets.only(right: 32.0),
-                                  child: Slider(
-                                    value: _bpmSliderValue,
-                                    onChanged: (value) => setState(
-                                      () {
-                                        _bpm = scaleValue(value, _minbpm, _maxbpm).toInt();
-                                        cancelTimers();
-                                        setTimers();
-                                      },
-                                    ),
-                                  ),
-                                ),
-                              ],
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: controlsTopPadding),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          SliderAndNumberDisplay(
+                            title: "bpm",
+                            sliderValue: _bpmSliderValue,
+                            displayValue: padWithZeros(_bpm, _maxbpm),
+                            onChanged: (value) => setState(
+                              () {
+                                _bpm = scaleValue(value, _minbpm, _maxbpm).toInt();
+                                cancelTimers();
+                                setTimers();
+                              },
                             ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 32.0),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        ...rythms.keys.map((key) =>
-                            _RythmSelector(rythm: key, active: _activeRythms.contains(key), onTap: _selectRythm))
-                      ],
-                    ),
-                  ],
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 32.0),
+                      Wrap(
+                        runSpacing: 24,
+                        children: [
+                          ...rythms.keys.map((key) =>
+                              _RythmSelector(rythm: key, active: _activeRythms.contains(key), onTap: _selectRythm))
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            Expanded(
+            SliverFillRemaining(
               child: Center(
                 child: Stack(
                   alignment: AlignmentDirectional.center,
@@ -182,6 +183,7 @@ class _PolyRythmsScreenState extends State<PolyRythmsScreen> {
                     ..._activeRythms.map(
                       (rythm) => _StaticWidget(
                         rythm: rythm,
+                        radius: radius,
                       ),
                     ),
                     ..._activeRythms.map(
@@ -189,6 +191,7 @@ class _PolyRythmsScreenState extends State<PolyRythmsScreen> {
                         rythm: rythm,
                         bpm: _bpm,
                         startTime: _startTime,
+                        radius: radius,
                       ),
                     )
                   ],
@@ -241,12 +244,14 @@ class _RythmSelector extends StatelessWidget {
 class _MovingWidget extends StatefulWidget {
   final int rythm;
   final int bpm;
+  final double radius;
   final DateTime startTime;
 
   const _MovingWidget({
     required this.rythm,
     required this.startTime,
     required this.bpm,
+    required this.radius,
   });
 
   @override
@@ -282,16 +287,17 @@ class _MovingWidgetState extends State<_MovingWidget> {
   @override
   Widget build(BuildContext context) {
     return CustomPaint(
-      painter: RythmPainter(state: _state, rythm: widget.rythm),
+      painter: RythmPainter(state: _state, rythm: widget.rythm, radius: widget.radius),
     );
   }
 }
 
 class RythmPainter extends CustomPainter {
   final double state;
+  final double radius;
   final int rythm;
 
-  const RythmPainter({required this.state, required this.rythm});
+  const RythmPainter({required this.radius, required this.state, required this.rythm});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -299,10 +305,10 @@ class RythmPainter extends CustomPainter {
       ..color = rythms[rythm]!.color
       ..style = PaintingStyle.fill;
 
-    final velocity = perimeterOfShape(_polygonRadius, rythm);
+    final velocity = perimeterOfShape(radius, rythm);
     final distance = velocity * state;
 
-    final position = positionFromDistance(distance, rythm);
+    final position = positionFromDistance(distance, rythm, radius);
 
     canvas.drawCircle(
       Offset(position.dx, position.dy),
@@ -326,13 +332,13 @@ double sideLengthOfShape(double radius, int rythm) {
   return 2 * radius * math.sin(math.pi / rythm);
 }
 
-Offset positionFromDistance(double distance, int rythm) {
-  final sideLength = sideLengthOfShape(_polygonRadius, rythm);
+Offset positionFromDistance(double distance, int rythm, double radius) {
+  final sideLength = sideLengthOfShape(radius, rythm);
   final positionOnSide = distance % sideLength;
   final previousIndex = distance ~/ sideLength;
   final sideIndex = previousIndex == rythm - 1 ? 0 : previousIndex + 1;
-  final offset = getOffset(rythm, sideIndex, _polygonRadius);
-  final previousOffset = getOffset(rythm, previousIndex, _polygonRadius);
+  final offset = getOffset(rythm, sideIndex, radius);
+  final previousOffset = getOffset(rythm, previousIndex, radius);
 
   final x = previousOffset.dx + (offset.dx - previousOffset.dx) * positionOnSide / sideLength;
   final y = previousOffset.dy + (offset.dy - previousOffset.dy) * positionOnSide / sideLength;
@@ -341,12 +347,13 @@ Offset positionFromDistance(double distance, int rythm) {
 
 class _StaticWidget extends StatelessWidget {
   final int rythm;
-  const _StaticWidget({required this.rythm});
+  final double radius;
+  const _StaticWidget({required this.rythm, required this.radius});
 
   @override
   Widget build(BuildContext context) {
     return CustomPaint(
-      painter: PolygonPainter(rythm: rythm),
+      painter: PolygonPainter(rythm: rythm, radius: radius),
     );
   }
 }
@@ -357,7 +364,7 @@ class PolygonPainter extends CustomPainter {
   final double strokeWidth;
   const PolygonPainter({
     required this.rythm,
-    this.radius = _polygonRadius,
+    required this.radius,
     this.strokeWidth = 3,
   });
 

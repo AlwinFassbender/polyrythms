@@ -3,11 +3,13 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:polyrythms/constants/constants.dart';
 import 'package:polyrythms/functions/calculate_radius.dart';
 import 'package:polyrythms/functions/slider_functions.dart';
 import 'package:polyrythms/gen/assets.gen.dart';
 import 'package:polyrythms/widgets/control_toggle.dart';
 import 'package:polyrythms/widgets/selection_container.dart';
+import 'package:polyrythms/widgets/sllider_and_number_display.dart';
 import 'package:soundpool/soundpool.dart';
 
 class Info {
@@ -80,27 +82,37 @@ class _BoxMetronomeScreenState extends State<BoxMetronomeScreen> {
     final radius = calculateRadius(MediaQuery.sizeOf(context));
     final width = radius * 2;
     final height = radius * 2 * 9 / 16;
+
     return Scaffold(
       backgroundColor: Colors.black,
-      body: Column(
-        children: [
-          ControlToggle((active) => setState(() => _showControls = active)),
-          if (_showControls)
-            _RythmSelector(
-              active: true,
-              verticalRythm: _verticalRythm,
-              horizontalRythm: _horizontalRythm,
-              velocity: _velocity,
-              onConfirm: (verticalRythm, horizontalRythm, velocity) {
-                setState(() {
-                  _verticalRythm = verticalRythm;
-                  _horizontalRythm = horizontalRythm;
-                  _velocity = velocity;
-                  _startTime = DateTime.now();
-                });
-              },
+      body: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ControlToggle((active) => setState(() => _showControls = active)),
+              ],
             ),
-          Expanded(
+          ),
+          if (_showControls)
+            SliverToBoxAdapter(
+              child: _RythmSelector(
+                active: true,
+                verticalRythm: _verticalRythm,
+                horizontalRythm: _horizontalRythm,
+                velocity: _velocity,
+                onConfirm: (verticalRythm, horizontalRythm, velocity) {
+                  setState(() {
+                    _verticalRythm = verticalRythm;
+                    _horizontalRythm = horizontalRythm;
+                    _velocity = velocity;
+                    _startTime = DateTime.now();
+                  });
+                },
+              ),
+            ),
+          SliverFillRemaining(
             child: Center(
               child: Stack(
                 alignment: AlignmentDirectional.center,
@@ -170,44 +182,48 @@ class _RythmSelectorState extends State<_RythmSelector> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(top: 100),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+      padding: const EdgeInsets.only(top: controlsTopPadding, right: horizontalPadding, left: horizontalPadding),
+      child: Wrap(
+        runSpacing: wrapRunSpacing,
+        spacing: wrapSpacing,
+        alignment: WrapAlignment.center,
+        crossAxisAlignment: WrapCrossAlignment.center,
         children: [
-          Text(padWithZeros(getDisplayValue(_velocity), maxDisplayValue)),
-          Padding(
-            padding: const EdgeInsets.only(right: 32.0),
-            child: Slider(
-              value: _sliderValue,
-              onChanged: (value) => setState(
-                () {
-                  _velocity = math.exp(scaleValue(value, _minLog, _maxLog));
-                },
-              ),
+          SliderAndNumberDisplay(
+            title: "velocity",
+            displayValue: padWithZeros(getDisplayValue(_velocity), maxDisplayValue),
+            sliderValue: _sliderValue,
+            onChanged: (value) => setState(
+              () {
+                _velocity = math.exp(scaleValue(value, _minLog, _maxLog));
+              },
             ),
           ),
-          _RythmTextField(
-              initialValue: widget.verticalRythm,
-              onChanged: (p0) {
-                setState(() {
-                  _verticalRythm = p0;
-                });
-              }),
-          _RythmTextField(
-              initialValue: widget.horizontalRythm,
-              onChanged: (p0) {
-                setState(() {
-                  _horizontalRythm = p0;
-                });
-              }),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 32.0),
-            child: SelectContainer(
-              onTap: () => widget.onConfirm(_verticalRythm, _horizontalRythm, _velocity),
-              child: const Center(
-                child: Text(
-                  "Set",
-                ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _RythmTextField(
+                  initialValue: widget.verticalRythm,
+                  onChanged: (p0) {
+                    setState(() {
+                      _verticalRythm = p0;
+                    });
+                  }),
+              const SizedBox(width: wrapSpacing / 2),
+              _RythmTextField(
+                  initialValue: widget.horizontalRythm,
+                  onChanged: (p0) {
+                    setState(() {
+                      _horizontalRythm = p0;
+                    });
+                  }),
+            ],
+          ),
+          SelectContainer(
+            onTap: () => widget.onConfirm(_verticalRythm, _horizontalRythm, _velocity),
+            child: const Center(
+              child: Text(
+                "Set",
               ),
             ),
           )
@@ -224,28 +240,25 @@ class _RythmTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 32.0),
-      child: SizedBox(
-        width: 80,
-        child: TextFormField(
-          style: const TextStyle(color: Colors.white),
-          decoration: const InputDecoration(
-            hoverColor: Colors.pinkAccent,
-            focusColor: Colors.pinkAccent,
-            labelText: "Rythm",
-            hintText: "Rythm",
-            border: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white)),
-          ),
-          initialValue: "$initialValue",
-          keyboardType: TextInputType.number,
-          onChanged: (value) {
-            final rythm = int.tryParse(value);
-            if (rythm != null) {
-              onChanged(rythm);
-            }
-          },
+    return SizedBox(
+      width: 80,
+      child: TextFormField(
+        style: const TextStyle(color: Colors.white),
+        decoration: const InputDecoration(
+          hoverColor: Colors.pinkAccent,
+          focusColor: Colors.pinkAccent,
+          labelText: "Rythm",
+          hintText: "Rythm",
+          border: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white)),
         ),
+        initialValue: "$initialValue",
+        keyboardType: TextInputType.number,
+        onChanged: (value) {
+          final rythm = int.tryParse(value);
+          if (rythm != null) {
+            onChanged(rythm);
+          }
+        },
       ),
     );
   }
